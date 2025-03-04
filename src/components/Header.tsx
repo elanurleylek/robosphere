@@ -12,10 +12,10 @@ const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigationItems = [
-    { label: 'Kurslar', href: '#courses', icon: BookOpen },
-    { label: 'Etkinlikler', href: '#events', icon: Calendar },
-    { label: 'Blog', href: '#blog', icon: MessageSquare },
-    { label: 'Mağaza', href: '#shop', icon: ShoppingBag },
+    { label: 'Kurslar', href: '/kurslar', icon: BookOpen },
+    { label: 'Etkinlikler', href: '/etkinlikler', icon: Calendar },
+    { label: 'Blog', href: '/blog', icon: MessageSquare },
+    { label: 'Mağaza', href: '/magaza', icon: ShoppingBag },
   ];
 
   return (
@@ -30,10 +30,14 @@ const Header: React.FC = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
           {navigationItems.map((item) => (
-            <a key={item.label} href={item.href} className="hover:text-primary transition-colors duration-200 flex items-center space-x-1">
+            <Link 
+              key={item.label} 
+              to={item.href} 
+              className="hover:text-primary transition-colors duration-200 flex items-center space-x-1"
+            >
               <item.icon className="h-4 w-4" />
               <span>{item.label}</span>
-            </a>
+            </Link>
           ))}
           <Link to="/login">
             <Button variant="outline">Giriş Yap</Button>
@@ -54,14 +58,19 @@ const Header: React.FC = () => {
         <div className="md:hidden bg-secondary/10 backdrop-blur-sm py-4 px-6">
           <nav className="flex flex-col space-y-3">
             {navigationItems.map((item) => (
-              <a key={item.label} href={item.href} className="hover:text-primary transition-colors duration-200 block">
+              <Link 
+                key={item.label} 
+                to={item.href} 
+                className="hover:text-primary transition-colors duration-200 block"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 {item.label}
-              </a>
+              </Link>
             ))}
-            <Link to="/login">
+            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
               <Button variant="outline" className="w-full">Giriş Yap</Button>
             </Link>
-            <Link to="/register">
+            <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
               <Button className="w-full">Kayıt Ol</Button>
             </Link>
           </nav>
