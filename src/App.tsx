@@ -12,6 +12,11 @@ import Courses from "./pages/Courses";
 import Events from "./pages/Events";
 import Blog from "./pages/Blog";
 import Shop from "./pages/Shop";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminCourses from "./pages/admin/AdminCourses";
+import AdminEvents from "./pages/admin/AdminEvents";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +34,15 @@ const App = () => (
           <Route path="/etkinlikler" element={<Events />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/magaza" element={<Shop />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="kurslar" element={<AdminCourses />} />
+            <Route path="etkinlikler" element={<AdminEvents />} />
+            <Route path="kullanicilar" element={<AdminUsers />} />
+          </Route>
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

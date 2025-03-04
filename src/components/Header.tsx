@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Menu, X, ChevronDown, Cpu, 
-  BookOpen, Calendar, MessageSquare, ShoppingBag 
+  BookOpen, Calendar, MessageSquare, ShoppingBag, LayoutDashboard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,12 @@ const Header: React.FC = () => {
           <Link to="/register">
             <Button>Kayıt Ol</Button>
           </Link>
+          <Link to="/admin" className="ml-1">
+            <Button variant="ghost" className="flex items-center space-x-1">
+              <LayoutDashboard className="h-4 w-4" />
+              <span>Admin</span>
+            </Button>
+          </Link>
         </nav>
 
         {/* Mobile Navigation Button */}
@@ -72,6 +78,12 @@ const Header: React.FC = () => {
             </Link>
             <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
               <Button className="w-full">Kayıt Ol</Button>
+            </Link>
+            <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button variant="ghost" className="w-full flex items-center justify-center space-x-1">
+                <LayoutDashboard className="h-4 w-4" />
+                <span>Admin</span>
+              </Button>
             </Link>
           </nav>
         </div>
