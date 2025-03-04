@@ -6,13 +6,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Search, Plus, Edit, Trash2, MoreHorizontal, Filter,
-  Mail, Phone, ChevronLeft, ChevronRight, CheckCircle2, XCircle
+  Search, Filter, Mail, Phone, ChevronLeft, ChevronRight, 
+  CheckCircle2, XCircle, Edit, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import AddUserDialog from '@/components/admin/AddUserDialog';
 
 // Mock user data
-const mockUsers = [
+const initialMockUsers = [
   { id: 1, name: 'Ahmet Yılmaz', email: 'ahmet@example.com', phone: '555-123-4567', role: 'Öğrenci', status: 'Aktif', registered: '10.02.2023' },
   { id: 2, name: 'Ayşe Kaya', email: 'ayse@example.com', phone: '555-234-5678', role: 'Öğrenci', status: 'Aktif', registered: '15.01.2023' },
   { id: 3, name: 'Mehmet Demir', email: 'mehmet@example.com', phone: '555-345-6789', role: 'Eğitmen', status: 'Aktif', registered: '05.12.2022' },
@@ -22,9 +23,10 @@ const mockUsers = [
 
 const AdminUsers: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState(initialMockUsers);
   
-  const handleAddUser = () => {
-    toast.info('Yeni kullanıcı ekleme özelliği gelecek!');
+  const handleAddUser = (newUser: any) => {
+    setUsers([newUser, ...users]);
   };
   
   const handleEditUser = (id: number) => {
@@ -32,15 +34,19 @@ const AdminUsers: React.FC = () => {
   };
   
   const handleDeleteUser = (id: number) => {
+    setUsers(users.filter(user => user.id !== id));
     toast.success(`Kullanıcı silindi (ID: ${id})`);
   };
   
   const handleToggleStatus = (id: number, currentStatus: string) => {
     const newStatus = currentStatus === 'Aktif' ? 'Pasif' : 'Aktif';
+    setUsers(users.map(user => 
+      user.id === id ? { ...user, status: newStatus } : user
+    ));
     toast.success(`Kullanıcı durumu değiştirildi: ${newStatus}`);
   };
   
-  const filteredUsers = mockUsers.filter(user => 
+  const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.role.toLowerCase().includes(searchQuery.toLowerCase())
@@ -50,9 +56,7 @@ const AdminUsers: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Kullanıcılar</h1>
-        <Button onClick={handleAddUser}>
-          <Plus className="mr-2 h-4 w-4" /> Yeni Kullanıcı
-        </Button>
+        <AddUserDialog onUserAdded={handleAddUser} />
       </div>
       
       {/* User Stats */}
@@ -60,7 +64,7 @@ const AdminUsers: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="text-3xl font-bold">{mockUsers.length}</div>
+              <div className="text-3xl font-bold">{users.length}</div>
               <div className="text-sm text-muted-foreground mt-1">Toplam Kullanıcı</div>
             </div>
           </CardContent>
@@ -68,7 +72,7 @@ const AdminUsers: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="text-3xl font-bold">{mockUsers.filter(u => u.role === 'Öğrenci').length}</div>
+              <div className="text-3xl font-bold">{users.filter(u => u.role === 'Öğrenci').length}</div>
               <div className="text-sm text-muted-foreground mt-1">Öğrenci</div>
             </div>
           </CardContent>
@@ -76,7 +80,7 @@ const AdminUsers: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="text-3xl font-bold">{mockUsers.filter(u => u.role === 'Eğitmen').length}</div>
+              <div className="text-3xl font-bold">{users.filter(u => u.role === 'Eğitmen').length}</div>
               <div className="text-sm text-muted-foreground mt-1">Eğitmen</div>
             </div>
           </CardContent>
@@ -137,7 +141,9 @@ const AdminUsers: React.FC = () => {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         user.role === 'Eğitmen' 
                           ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-purple-100 text-purple-800'
+                          : user.role === 'Yönetici'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-purple-100 text-purple-800'
                       }`}>
                         {user.role}
                       </span>
