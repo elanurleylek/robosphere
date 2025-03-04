@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Menu, X, ChevronDown, Cpu, 
   BookOpen, Calendar, MessageSquare, ShoppingBag 
@@ -20,10 +22,10 @@ const Header: React.FC = () => {
     <header className="bg-background py-4 shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
-        <a href="/" className="text-xl font-semibold flex items-center space-x-2">
+        <Link to="/" className="text-xl font-semibold flex items-center space-x-2">
           <Cpu className="h-6 w-6 text-primary" />
           <span>Robotik Okulu</span>
-        </a>
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
@@ -33,8 +35,12 @@ const Header: React.FC = () => {
               <span>{item.label}</span>
             </a>
           ))}
-          <Button variant="outline">Giriş Yap</Button>
-          <Button>Kayıt Ol</Button>
+          <Link to="/login">
+            <Button variant="outline">Giriş Yap</Button>
+          </Link>
+          <Link to="/register">
+            <Button>Kayıt Ol</Button>
+          </Link>
         </nav>
 
         {/* Mobile Navigation Button */}
@@ -52,8 +58,12 @@ const Header: React.FC = () => {
                 {item.label}
               </a>
             ))}
-            <Button variant="outline">Giriş Yap</Button>
-            <Button>Kayıt Ol</Button>
+            <Link to="/login">
+              <Button variant="outline" className="w-full">Giriş Yap</Button>
+            </Link>
+            <Link to="/register">
+              <Button className="w-full">Kayıt Ol</Button>
+            </Link>
           </nav>
         </div>
       )}
