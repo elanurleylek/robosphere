@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import FeaturedCourses from '@/components/FeaturedCourses';
 import Footer from '@/components/Footer';
@@ -79,10 +80,12 @@ const Courses: React.FC = () => {
             <p className="text-lg text-foreground/70 max-w-2xl mx-auto mb-8">
               Uygulamalı eğitimlerimizle robotik alanında bilgi ve becerilerinizi geliştirin.
             </p>
-            <Button size="lg" className="group">
-              Hemen Kayıt Ol
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <Link to="/register">
+              <Button size="lg" className="group">
+                Hemen Kayıt Ol
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           </div>
         </section>
       </main>
