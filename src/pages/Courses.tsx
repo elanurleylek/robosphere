@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import FeaturedCourses from '@/components/FeaturedCourses';
@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, Search, Filter, Cpu, CircuitBoard, Microchip, Cog } from 'lucide-react';
+import { toast } from 'sonner';
 
 const courseCategories = [
   { name: 'Robotik Temel', count: 12, icon: Cpu },
@@ -15,7 +16,42 @@ const courseCategories = [
   { name: 'Sensörler', count: 9, icon: Cog },
 ];
 
+// Örnek kurslar listesi
+const allCourses = [
+  { id: 1, title: 'Robotik Başlangıç', category: 'Robotik Temel', instructor: 'Ahmet Yılmaz', level: 'Başlangıç' },
+  { id: 2, title: 'Arduino ile Projeler', category: 'Arduino', instructor: 'Ayşe Kaya', level: 'Orta' },
+  { id: 3, title: 'Raspberry Pi İleri Seviye', category: 'Raspberry Pi', instructor: 'Mehmet Demir', level: 'İleri' },
+  { id: 4, title: 'Sensör Teknolojileri', category: 'Sensörler', instructor: 'Fatma Şahin', level: 'Orta' },
+  { id: 5, title: 'Robot Yarışmasına Hazırlık', category: 'Robotik Temel', instructor: 'Ali Öztürk', level: 'İleri' },
+];
+
 const Courses: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [showFilterToast, setShowFilterToast] = useState(true);
+  
+  // Arama ve filtreleme işlemleri
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+  
+  const handleFilter = () => {
+    if (showFilterToast) {
+      toast.success('Filtreler uygulandı');
+      setShowFilterToast(false);
+    }
+  };
+  
+  const handleCategoryClick = (categoryName: string) => {
+    setActiveCategory(prev => prev === categoryName ? null : categoryName);
+    toast.success(`${categoryName} kategorisi ${activeCategory === categoryName ? 'filtrelendi' : 'seçildi'}`);
+  };
+  
+  // Kategoriye göre filtreleme
+  const filteredCategories = activeCategory 
+    ? courseCategories.filter(cat => cat.name === activeCategory)
+    : courseCategories;
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -36,9 +72,11 @@ const Courses: React.FC = () => {
                 <Input 
                   placeholder="Kurs ara..." 
                   className="pl-10 h-12"
+                  value={searchQuery}
+                  onChange={handleSearch}
                 />
               </div>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2" onClick={handleFilter}>
                 <Filter className="h-4 w-4" />
                 Filtrele
               </Button>
@@ -52,10 +90,13 @@ const Courses: React.FC = () => {
             <h2 className="text-2xl font-bold mb-8 text-center">Kurs Kategorileri</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {courseCategories.map((category) => (
+              {filteredCategories.map((category) => (
                 <div 
                   key={category.name}
-                  className="bg-card border border-border/50 rounded-xl p-6 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                  className={`bg-card border border-border/50 rounded-xl p-6 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer ${
+                    activeCategory === category.name ? 'border-primary border-2' : ''
+                  }`}
+                  onClick={() => handleCategoryClick(category.name)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="p-2 rounded-full bg-primary/10 text-primary">
