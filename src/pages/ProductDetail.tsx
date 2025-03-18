@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Star, Minus, Plus, ShoppingCart, Heart, 
   Share2, TruckIcon, RotateCcw, Shield, MessageSquare, 
-  CheckCircle, HelpCircle
+  CheckCircle, HelpCircle, ThumbsUp
 } from 'lucide-react';
 
 const ProductDetail: React.FC = () => {
