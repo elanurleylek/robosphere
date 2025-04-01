@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Logo from '@/components/Logo';
@@ -8,8 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const LogoDownload: React.FC = () => {
+  const [logoFormat, setLogoFormat] = useState<'svg' | 'jpeg'>('svg');
+  
   // Robot görseli indirme fonksiyonu
   const downloadRobotImage = () => {
     const robotImage = 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e';
@@ -52,11 +56,30 @@ const LogoDownload: React.FC = () => {
                   <CardHeader>
                     <CardTitle>Standart Logo</CardTitle>
                     <CardDescription>
-                      Robotik Okulu'nun standart logosu. İndirmek için butona tıklayın.
+                      Robotik Okulu'nun standart logosu. İndirmek için format seçin ve butona tıklayın.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex justify-center">
-                    <Logo size="lg" />
+                  <CardContent>
+                    <div className="mb-6">
+                      <RadioGroup 
+                        defaultValue="svg" 
+                        className="flex gap-4"
+                        onValueChange={(value) => setLogoFormat(value as 'svg' | 'jpeg')}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="svg" id="svg" />
+                          <Label htmlFor="svg">SVG Format</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="jpeg" id="jpeg" />
+                          <Label htmlFor="jpeg">JPEG Format</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div className="flex justify-center">
+                      <Logo size="lg" downloadFormat={logoFormat} />
+                    </div>
                   </CardContent>
                 </Card>
                 
@@ -66,7 +89,7 @@ const LogoDownload: React.FC = () => {
                       <CardTitle className="text-base">Küçük Logo</CardTitle>
                     </CardHeader>
                     <CardContent className="flex justify-center">
-                      <Logo size="sm" />
+                      <Logo size="sm" downloadFormat={logoFormat} />
                     </CardContent>
                   </Card>
                   
@@ -75,7 +98,7 @@ const LogoDownload: React.FC = () => {
                       <CardTitle className="text-base">Orta Boy Logo</CardTitle>
                     </CardHeader>
                     <CardContent className="flex justify-center">
-                      <Logo size="md" />
+                      <Logo size="md" downloadFormat={logoFormat} />
                     </CardContent>
                   </Card>
                   
@@ -84,7 +107,7 @@ const LogoDownload: React.FC = () => {
                       <CardTitle className="text-base">Büyük Logo</CardTitle>
                     </CardHeader>
                     <CardContent className="flex justify-center">
-                      <Logo size="xl" />
+                      <Logo size="xl" downloadFormat={logoFormat} />
                     </CardContent>
                   </Card>
                 </div>

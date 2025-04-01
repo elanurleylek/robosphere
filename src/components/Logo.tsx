@@ -13,6 +13,7 @@ interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({ downloadable = true, size = 'md', downloadFormat = 'svg' }) => {
   const logoRef = useRef<SVGSVGElement>(null);
+  const logoContainerRef = useRef<HTMLDivElement>(null);
 
   const sizes = {
     sm: { logoSize: 24, fontSize: 'text-base', padding: 'p-2' },
@@ -24,7 +25,7 @@ const Logo: React.FC<LogoProps> = ({ downloadable = true, size = 'md', downloadF
   const { logoSize, fontSize, padding } = sizes[size];
 
   const downloadLogo = () => {
-    if (!logoRef.current) return;
+    if (!logoRef.current && !logoContainerRef.current) return;
 
     if (downloadFormat === 'svg') {
       // SVG içeriği
@@ -73,31 +74,79 @@ const Logo: React.FC<LogoProps> = ({ downloadable = true, size = 'md', downloadF
       
       toast.success('Logo SVG olarak indirildi!');
     } else if (downloadFormat === 'jpeg') {
-      // JPEG indirme işlemi için
-      const robotImage = 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e';
+      if (!logoContainerRef.current) return;
       
-      // İndirme işlemi
-      fetch(robotImage)
-        .then(response => response.blob())
-        .then(blob => {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = 'robotik-okulu-robot.jpeg';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          
-          toast.success('Robot görseli JPEG olarak indirildi!');
-        })
-        .catch(error => {
-          console.error('Görsel indirme hatası:', error);
-          toast.error('Görsel indirilirken bir hata oluştu.');
-        });
+      // Canvas oluştur
+      const canvas = document.createElement('canvas');
+      const containerWidth = logoSize * 4; // Logo ve yazı için gereken genişlik
+      const containerHeight = logoSize * 2; // Yükseklik
+      
+      canvas.width = containerWidth;
+      canvas.height = containerHeight;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        toast.error('Canvas oluşturulamadı.');
+        return;
+      }
+      
+      // Arka planı beyaz yap
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, containerWidth, containerHeight);
+      
+      // Logo arka plan çemberi
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(30, 64, 175, 0.1)'; // primary/10 renk
+      ctx.arc(logoSize, containerHeight/2, logoSize, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // SVG'yi çiz
+      const img = new Image();
+      img.onload = () => {
+        // Logo ikonu
+        ctx.drawImage(img, logoSize/2, containerHeight/2 - logoSize/2, logoSize, logoSize);
+        
+        // Yazıyı ekle
+        ctx.font = `bold ${logoSize/2}px Inter, sans-serif`;
+        ctx.fillStyle = '#1E40AF'; // primary renk
+        ctx.fillText('Robotik Okulu', logoSize * 1.5, containerHeight/2 + logoSize/6);
+        
+        // JPEG olarak indir
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'robotik-okulu-logo.jpeg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success('Logo JPEG olarak indirildi!');
+      };
+      
+      // Lucide-react Cpu ikonu için basit bir SVG oluştur
+      const cpuSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${logoSize}" height="${logoSize}" viewBox="0 0 24 24" fill="none" stroke="#1E40AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+          <rect x="9" y="9" width="6" height="6"></rect>
+          <line x1="9" y1="1" x2="9" y2="4"></line>
+          <line x1="15" y1="1" x2="15" y2="4"></line>
+          <line x1="9" y1="20" x2="9" y2="23"></line>
+          <line x1="15" y1="20" x2="15" y2="23"></line>
+          <line x1="20" y1="9" x2="23" y2="9"></line>
+          <line x1="20" y1="14" x2="23" y2="14"></line>
+          <line x1="1" y1="9" x2="4" y2="9"></line>
+          <line x1="1" y1="14" x2="4" y2="14"></line>
+        </svg>
+      `;
+      
+      const svgBlob = new Blob([cpuSvg], { type: 'image/svg+xml' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      img.src = svgUrl;
     }
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" ref={logoContainerRef}>
       <div className="flex items-center">
         <div className={`bg-primary/10 rounded-full ${padding} flex items-center justify-center`}>
           <Cpu
@@ -118,7 +167,7 @@ const Logo: React.FC<LogoProps> = ({ downloadable = true, size = 'md', downloadF
           className="mt-4 flex items-center gap-2"
         >
           <Download size={16} />
-          Logo İndir
+          Logo İndir ({downloadFormat.toUpperCase()})
         </Button>
       )}
     </div>
