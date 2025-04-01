@@ -4,8 +4,34 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Logo from '@/components/Logo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 const LogoDownload: React.FC = () => {
+  // Robot görseli indirme fonksiyonu
+  const downloadRobotImage = () => {
+    const robotImage = 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e';
+    
+    fetch(robotImage)
+      .then(response => response.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'robotik-okulu-robot.jpeg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success('Robot görseli JPEG olarak indirildi!');
+      })
+      .catch(error => {
+        console.error('Görsel indirme hatası:', error);
+        toast.error('Görsel indirilirken bir hata oluştu.');
+      });
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -15,46 +41,84 @@ const LogoDownload: React.FC = () => {
           <h1 className="text-3xl font-bold mb-8 text-center">Logolarımız</h1>
           
           <div className="max-w-3xl mx-auto grid gap-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Standart Logo</CardTitle>
-                <CardDescription>
-                  Robotik Okulu'nun standart logosu. İndirmek için butona tıklayın.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center">
-                <Logo size="lg" />
-              </CardContent>
-            </Card>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Küçük Logo</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                  <Logo size="sm" />
-                </CardContent>
-              </Card>
+            <Tabs defaultValue="logolar">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="logolar">Logolar</TabsTrigger>
+                <TabsTrigger value="robot">Robot Görseli</TabsTrigger>
+              </TabsList>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Orta Boy Logo</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                  <Logo size="md" />
-                </CardContent>
-              </Card>
+              <TabsContent value="logolar">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Standart Logo</CardTitle>
+                    <CardDescription>
+                      Robotik Okulu'nun standart logosu. İndirmek için butona tıklayın.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex justify-center">
+                    <Logo size="lg" />
+                  </CardContent>
+                </Card>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Küçük Logo</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                      <Logo size="sm" />
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Orta Boy Logo</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                      <Logo size="md" />
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Büyük Logo</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                      <Logo size="xl" />
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Büyük Logo</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                  <Logo size="xl" />
-                </CardContent>
-              </Card>
-            </div>
+              <TabsContent value="robot">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Robot Görseli</CardTitle>
+                    <CardDescription>
+                      Ana sayfada kullanılan robot görselini JPEG formatında indirebilirsiniz.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="relative w-full max-w-lg mb-6">
+                      <img 
+                        src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e" 
+                        alt="Robot" 
+                        className="w-full rounded-lg shadow-lg"
+                      />
+                    </div>
+                    
+                    <Button 
+                      onClick={downloadRobotImage}
+                      variant="default" 
+                      className="mt-4 flex items-center gap-2"
+                    >
+                      <Download size={16} />
+                      JPEG Olarak İndir
+                    </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </main>

@@ -8,9 +8,10 @@ import { toast } from 'sonner';
 interface LogoProps {
   downloadable?: boolean;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  downloadFormat?: 'svg' | 'jpeg';
 }
 
-const Logo: React.FC<LogoProps> = ({ downloadable = true, size = 'md' }) => {
+const Logo: React.FC<LogoProps> = ({ downloadable = true, size = 'md', downloadFormat = 'svg' }) => {
   const logoRef = useRef<SVGSVGElement>(null);
 
   const sizes = {
@@ -25,51 +26,74 @@ const Logo: React.FC<LogoProps> = ({ downloadable = true, size = 'md' }) => {
   const downloadLogo = () => {
     if (!logoRef.current) return;
 
-    // SVG içeriği
-    const svgElement = logoRef.current.cloneNode(true) as SVGSVGElement;
-    
-    // SVG'yi temizle ve boyutlandır
-    svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    svgElement.setAttribute('width', `${logoSize * 3}`);
-    svgElement.setAttribute('height', `${logoSize * 3}`);
-    
-    // SVG içeriğine yazı ekle
-    const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-    foreignObject.setAttribute('x', `${logoSize + 10}`);
-    foreignObject.setAttribute('y', '0');
-    foreignObject.setAttribute('width', `${logoSize * 2}`);
-    foreignObject.setAttribute('height', `${logoSize}`);
-    
-    const div = document.createElement('div');
-    div.innerHTML = 'Robotik Okulu';
-    div.style.fontWeight = 'bold';
-    div.style.fontSize = `${logoSize/2}px`;
-    div.style.fontFamily = 'Inter, sans-serif';
-    div.style.color = '#1E40AF'; // primary renk
-    div.style.display = 'flex';
-    div.style.alignItems = 'center';
-    div.style.height = '100%';
-    
-    foreignObject.appendChild(div);
-    svgElement.appendChild(foreignObject);
-    
-    // SVG'yi string olarak al
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svgElement);
-    
-    // Base64 kodlama
-    const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
-    const dataUri = `data:image/svg+xml;base64,${svgBase64}`;
-    
-    // İndirme işlemi
-    const link = document.createElement('a');
-    link.href = dataUri;
-    link.download = 'robotik-okulu-logo.svg';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success('Logo başarıyla indirildi!');
+    if (downloadFormat === 'svg') {
+      // SVG içeriği
+      const svgElement = logoRef.current.cloneNode(true) as SVGSVGElement;
+      
+      // SVG'yi temizle ve boyutlandır
+      svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svgElement.setAttribute('width', `${logoSize * 3}`);
+      svgElement.setAttribute('height', `${logoSize * 3}`);
+      
+      // SVG içeriğine yazı ekle
+      const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+      foreignObject.setAttribute('x', `${logoSize + 10}`);
+      foreignObject.setAttribute('y', '0');
+      foreignObject.setAttribute('width', `${logoSize * 2}`);
+      foreignObject.setAttribute('height', `${logoSize}`);
+      
+      const div = document.createElement('div');
+      div.innerHTML = 'Robotik Okulu';
+      div.style.fontWeight = 'bold';
+      div.style.fontSize = `${logoSize/2}px`;
+      div.style.fontFamily = 'Inter, sans-serif';
+      div.style.color = '#1E40AF'; // primary renk
+      div.style.display = 'flex';
+      div.style.alignItems = 'center';
+      div.style.height = '100%';
+      
+      foreignObject.appendChild(div);
+      svgElement.appendChild(foreignObject);
+      
+      // SVG'yi string olarak al
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgElement);
+      
+      // Base64 kodlama
+      const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+      const dataUri = `data:image/svg+xml;base64,${svgBase64}`;
+      
+      // İndirme işlemi
+      const link = document.createElement('a');
+      link.href = dataUri;
+      link.download = 'robotik-okulu-logo.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Logo SVG olarak indirildi!');
+    } else if (downloadFormat === 'jpeg') {
+      // JPEG indirme işlemi için
+      const robotImage = 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e';
+      
+      // İndirme işlemi
+      fetch(robotImage)
+        .then(response => response.blob())
+        .then(blob => {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'robotik-okulu-robot.jpeg';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          toast.success('Robot görseli JPEG olarak indirildi!');
+        })
+        .catch(error => {
+          console.error('Görsel indirme hatası:', error);
+          toast.error('Görsel indirilirken bir hata oluştu.');
+        });
+    }
   };
 
   return (
