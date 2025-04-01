@@ -16,6 +16,7 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
+import LogoDownload from "./pages/LogoDownload";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCourses from "./pages/admin/AdminCourses";
@@ -50,6 +51,9 @@ const App = () => (
           {/* Mağaza */}
           <Route path="/magaza" element={<Shop />} />
           <Route path="/magaza/:id" element={<ProductDetail />} />
+          
+          {/* Logo İndirme */}
+          <Route path="/logo-download" element={<LogoDownload />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>

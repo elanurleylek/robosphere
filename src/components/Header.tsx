@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Menu, X, ChevronDown, Cpu, 
-  BookOpen, Calendar, MessageSquare, ShoppingBag, LayoutDashboard
+  Menu, X, ChevronDown, BookOpen, Calendar, MessageSquare, ShoppingBag, LayoutDashboard, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import Logo from '@/components/Logo';
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -16,6 +16,7 @@ const Header: React.FC = () => {
     { label: 'Etkinlikler', href: '/etkinlikler', icon: Calendar },
     { label: 'Blog', href: '/blog', icon: MessageSquare },
     { label: 'Mağaza', href: '/magaza', icon: ShoppingBag },
+    { label: 'Logo', href: '/logo-download', icon: Download },
   ];
 
   return (
@@ -23,8 +24,7 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="text-xl font-semibold flex items-center space-x-2">
-          <Cpu className="h-6 w-6 text-primary" />
-          <span>Robotik Okulu</span>
+          <Logo downloadable={false} size="sm" />
         </Link>
 
         {/* Desktop Navigation */}
