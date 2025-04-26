@@ -1,11 +1,13 @@
-
 import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Calendar, User, Tag, Search, Bookmark } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Bookmark, Calendar, Search } from 'lucide-react';
+import BlogPost from '@/components/blog/BlogPost';
+import BlogCategories from '@/components/blog/BlogCategories';
+import BlogPagination from '@/components/blog/BlogPagination';
 
 const blogPosts = [
   {
@@ -89,82 +91,19 @@ const Blog: React.FC = () => {
                 
                 <div className="grid grid-cols-1 gap-8">
                   {blogPosts.map((post, index) => (
-                    <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="flex flex-col md:flex-row">
-                        <div className="md:w-1/3 h-48 md:h-auto">
-                          <img 
-                            src={post.image} 
-                            alt={post.title} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <CardContent className="p-6 md:w-2/3">
-                          {post.featured && (
-                            <div className="mb-3">
-                              <span className="bg-primary/10 text-primary text-xs font-medium px-2.5 py-0.5 rounded">
-                                Öne Çıkan
-                              </span>
-                            </div>
-                          )}
-                          <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
-                          <p className="text-foreground/70 mb-4">{post.excerpt}</p>
-                          
-                          <div className="flex items-center justify-between text-sm text-foreground/60 mb-4">
-                            <div className="flex items-center">
-                              <User className="h-4 w-4 mr-1" />
-                              <span>{post.author}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              <span>{post.date}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Tag className="h-4 w-4 mr-1" />
-                              <span>{post.category}</span>
-                            </div>
-                          </div>
-                          
-                          <Button variant="ghost" className="px-0 text-primary hover:text-primary/90 hover:bg-transparent group">
-                            Devamını Oku
-                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                          </Button>
-                        </CardContent>
-                      </div>
-                    </Card>
+                    <BlogPost key={index} post={post} />
                   ))}
                 </div>
                 
-                {/* Pagination */}
-                <div className="flex justify-center mt-10">
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">Önceki</Button>
-                    <Button variant="outline" size="sm" className="bg-primary/10">1</Button>
-                    <Button variant="outline" size="sm">2</Button>
-                    <Button variant="outline" size="sm">3</Button>
-                    <Button variant="outline" size="sm">Sonraki</Button>
-                  </div>
-                </div>
+                <BlogPagination />
               </div>
               
               {/* Sidebar */}
               <div className="lg:w-1/3 space-y-8">
-                {/* Categories */}
-                <div className="bg-card rounded-xl border border-border/50 p-6">
-                  <h3 className="text-lg font-semibold mb-4">Kategoriler</h3>
-                  <div className="space-y-2">
-                    {categories.map((category, index) => (
-                      <div key={index} className="flex justify-between items-center hover:text-primary cursor-pointer">
-                        <span>{category.name}</span>
-                        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
-                          {category.count}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <BlogCategories categories={categories} />
                 
                 {/* Popular Posts */}
-                <div className="bg-card rounded-xl border border-border/50 p-6">
+                <Card className="bg-card rounded-xl border border-border/50 p-6">
                   <h3 className="text-lg font-semibold mb-4">Popüler Yazılar</h3>
                   <div className="space-y-4">
                     {blogPosts.slice(0, 3).map((post, index) => (
@@ -188,7 +127,7 @@ const Blog: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                </div>
+                </Card>
                 
                 {/* Call to action */}
                 <div className="bg-primary/10 rounded-xl p-6 text-center">
