@@ -46,7 +46,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 5000;
-const HOST = process.env.HOST || 'localhost'; // HOST'u 0.0.0.0 olarak ayarlamak da ağ erişimini kolaylaştırabilir
+const HOST = process.env.HOST || '0.0.0.0'; // HOST'u 0.0.0.0 olarak ayarlamak da ağ erişimini kolaylaştırabilir
 
 connectDB(); // MongoDB bağlantısı
 
