@@ -62,12 +62,19 @@ const allowedOrigins = [
   'http://192.168.56.1:8080',   // Hata mesajında görünen IP tabanlı origin
   frontendDevUrl,                 // .env'den gelen veya varsayılan web frontend URL'niz
 
-  // --- BURAYA MOBİL UYGULAMA ORIGIN'LERİNİ EKLEDİK ---
+  // --- BURAYA MOBİL UYGULAMA ORIGIN'LERİNİ EKLEDİK --- //
   'http://localhost:8081',      // Capacitor/Cordova varsayılan WebView Origin'i (Debug/Emülatör)
   'http://127.0.0.1',           // Başka bir olası WebView Origin'i (Debug/Emülatör)
   'capacitor://localhost',      // Capacitor'ın kullandığı özel şema (Debug/Emülatör)
   'ionic://localhost',          // Ionic kullanıyorsanız özel şema (Debug/Emülatör)
   'http://localhost',           // Bazı WebView'ler için sadece localhost da origin olabilir
+
+  // *** YENİ EKLENEN MOBİL ORIGINLER (ÖNCEKİ HATA LOGLARINA GÖRE) ***
+  'https://localhost',          // <-- KONSOLDA GÖRÜLEN EKSİK ORIGIN (HTTPS versiyonu)
+  'https://capacitor.localhost',// <-- YAYGIN CAPACITOR 4+ ORIGIN (HTTPS)
+  'https://ionic.localhost',    // <-- IONIC KULLANIYORSANIZ İLGİLİ ORIGIN (HTTPS)
+  'https://_capacitor_assets_', // <-- iOS debug/development assets origin (genellikle iOS için)
+  // *** YENİ EKLENEN MOBİL ORIGINLER BİTTİ ***
 
   // Eğer mobil uygulamada API isteklerini bilgisayarınızın yerel IP'sine çevirdiyseniz (Geliştirme/Test için),
   // o IP adresini veya IP ve port kombinasyonunu buraya eklemeniz GEREKİR.
@@ -82,6 +89,8 @@ const allowedOrigins = [
 // Eğer canlı (production) ortamı için ayrı bir frontend URL'niz varsa, onu da ekleyebilirsiniz:
 if (process.env.NODE_ENV === 'production' && process.env.FRONTEND_PRODUCTION_URL) {
   allowedOrigins.push(process.env.FRONTEND_PRODUCTION_URL);
+  // Canlı Render adresi de backend'in kendi isteği için gerekebilir (self-requests)
+  allowedOrigins.push('https://robosphere.onrender.com'); // Render'daki canlı backend adresiniz
 }
 
 // Allowed origins listesini benzersiz yap ve geçersiz girdileri temizle
