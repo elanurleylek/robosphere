@@ -40,6 +40,19 @@ function isAxiosErrorLike(error: unknown): error is AxiosErrorLike {
   return false;
 }
 
+// Ortam değişkenini alırken TypeScript hatasını önlemek için
+// Vite için: import.meta.env üzerinde VITE_API_URL tanımını genişletin
+// CRA için: process.env üzerinde REACT_APP_API_URL tanımını genişletin
+// Tip tanımları (typings) dosyanızda (örneğin src/vite-env.d.ts veya src/react-app-env.d.ts)
+// bu değişkeni tanımlamanız gerekebilir:
+// declare interface ImportMetaEnv {
+//   readonly VITE_API_URL: string;
+// }
+// declare interface ProcessEnv {
+//   readonly REACT_APP_API_URL: string;
+// }
+// Bu örnekte doğrudan kullanacağız, ancak TypeScript projesinde tip güvenliği için tanımlamak iyidir.
+
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -77,22 +90,44 @@ const Register = () => {
     setIsLoading(true);
 
     try {
+      // API Base URL'sini ortam değişkeninden al
+      // Projenizin kurulumuna göre doğru değişkeni kullanın:
+      // Vite projeleri için: import.meta.env.VITE_API_URL
+      // Create React App (CRA) projeleri için: process.env.REACT_APP_API_URL
+      const API_BASE_URL = import.meta.env.VITE_API_URL; // Veya process.env.REACT_APP_API_URL
+
+      if (!API_BASE_URL) {
+         // Eğer ortam değişkeni tanımlanmamışsa hata ver
+         console.error("API URL environment variable is not defined!");
+         toast({ title: "Yapılandırma Hatası", description: "API URL'si tanımlanmamış. Lütfen .env dosyanızı kontrol edin.", variant: "destructive" });
+         setIsLoading(false);
+         return;
+      }
+
       const response = await axios.post<AuthApiResponse>(
-        'http://localhost:5000/api/auth/register',
+        `${API_BASE_URL}/api/auth/register`, // Ortam değişkeni + endpoint
         formData,
         {
           headers: {
             'Content-Type': 'application/json'
           },
-          withCredentials: true
+          withCredentials: true // Cookie veya session bilgileri için
         }
       );
 
       const data = response.data;
 
-      if (response.status < 200 || response.status >= 300) {
-        throw new Error(data.message || 'Kayıt sırasında bir sunucu hatası oluştu.');
-      }
+      // 200-299 aralığında olmayan durum kodları hata olarak kabul edilir.
+      // Axios normalde 4xx/5xx durum kodlarını catch bloğuna düşürür,
+      // ancak yine de bu kontrolü yapmak güvenli olabilir,
+      // özellikle bazı özel durumlar için veya Axios'un eski versiyonlarında.
+      // Modern Axios versiyonlarında bu kontrol genellikle gerekli değildir
+      // çünkü 4xx/5xx kodları otomatik olarak hataya dönüşür.
+      // if (response.status < 200 || response.status >= 300) {
+      //   // Bu kısım modern Axios ile genellikle unreachable
+      //   throw new Error(data.message || `Sunucu beklenmeyen durum kodu döndürdü: ${response.status}`);
+      // }
+
 
       toast({
         title: "Başarılı",
@@ -103,17 +138,22 @@ const Register = () => {
         navigate('/login');
       }, 1500);
 
-    } catch (error) { // 'error' burada 'unknown' tipindedir
+    } catch (error) { // 'error' artık AxiosError veya genel Error olabilir
       console.error('Kayıt Hatası:', error);
       let errorMessage = "Beklenmedik bir hata oluştu. Lütfen tekrar deneyin.";
 
+      // CORS hatası genellikle burada yakalanır, response nesnesi olmayabilir.
+      // isAxiosErrorLike kontrolü burada işe yarar.
       if (isAxiosErrorLike(error)) {
-        // Artık 'error' nesnesi 'AxiosErrorLike' tipinde kabul edilir
-        // ve 'response' gibi özelliklerine güvenle erişilebilir (varsa).
+        // Sunucudan dönen bir yanıt varsa ve içinde mesaj varsa onu kullan
         if (error.response && error.response.data && error.response.data.message) {
           errorMessage = error.response.data.message;
-        } else {
-          // Eğer response.data.message yoksa, genel error.message kullanılır
+        } else if (error.message.includes("Network Error")) {
+          // Ağ hatası (sunucuya ulaşılamıyor olabilir veya CORS engelledi)
+           errorMessage = "Sunucuya ulaşılamıyor veya ağ hatası oluştu. CORS yapılandırmasını kontrol edin.";
+        }
+        else {
+          // Axios hatası ama response.data.message yoksa genel error.message kullanılır
           errorMessage = error.message;
         }
       } else if (error instanceof Error) {
@@ -136,7 +176,7 @@ const Register = () => {
     }
   };
 
-  // ... (JSX kodunuzun geri kalanı aynı)
+  // ... (JSX kodunuz aynı kalıyor)
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
