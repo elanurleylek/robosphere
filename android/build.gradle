@@ -1,0 +1,65 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    // BURAYA kotlin_version DEĞİŞKENİNİ TANIMLIYORUZ
+    // Bu, buildscript bloğunda 'kotlin-gradle-plugin' bağımlılığı için gereklidir.
+    // Projenizin kullanması gereken güncel ve uyumlu Kotlin sürümünü buraya yazın.
+    // Önceki "Duplicate class" hatalarınız 1.8.22'yi içerdiği için bu sürümü kullandık.
+    ext.kotlin_version = '1.8.22'
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.7.2' // Sizin sürümünüz
+        classpath 'com.google.gms:google-services:4.4.2' // Sizin sürümünüz
+
+        // Kotlin gradle plugin bağımlılığı - Artık yukarıda tanımlı olduğu için hata vermeyecek
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${rootProject.ext.kotlin_version}"
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+// variables.gradle dosyasından diğer değişkenleri uygulamak için satır - BU SATIR KALMALI
+apply from: "variables.gradle"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        // app/build.gradle'da flatDir tanımlı, burada da olması gerekebilir duruma göre
+        // flatDir {
+        //     dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+        // }
+        // ... buradaki diğer repository'ler kalsın ...
+    }
+
+    // BAĞIMLILIK ÇÖZÜM STRATEJİSİ - ÇAKIŞMALARI ÇÖZMEK İÇİN (Önceki adımda eklendi, bu da kalmalı)
+    configurations.all {
+        // Tüm bağımlılık yapılandırmaları için (compile, implementation, vb.)
+        // bağımlılık çözüm stratezisini uygula
+        resolutionStrategy {
+            // Çakışan Kotlin Standart Kütüphanesinin eski sürümlerini hariç tut
+            // Hata mesajlarında görülen çakışan sürümlerin modüllerini hariç tutuyoruz
+            // kotlin-stdlib-jdk7 ve kotlin-stdlib-jdk8 çakışanlardı
+            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+            exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+            // exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib' // Genel stdlib çakışıyorsa
+
+            // Projedeki TÜM Kotlin Standart Kütüphanesi bağımlılıklarını
+            // belirli bir sürüme zorla (buildscript bloğunda tanımladığımız sürüm)
+            def forcedKotlinVersion = rootProject.ext.kotlin_version // Artık tanımlı olduğu için ?: kullanmaya gerek yok
+            force "org.jetbrains.kotlin:kotlin-stdlib:$forcedKotlinVersion"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$forcedKotlinVersion" // Bu zorlama exclude'a rağmen olabilir
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$forcedKotlinVersion" // Bu zorlama exclude'a rağmen olabilir
+            // force "org.jetbrains.kotlin:kotlin-reflect:$forcedKotlinVersion" // Eğer kullanılıyorsa
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

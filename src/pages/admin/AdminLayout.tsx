@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, BookOpen, Users, Calendar, 
-  LogOut, Menu, X, ArrowLeft, Cpu
+  LogOut, Menu, X, ArrowLeft, Cpu, Folder
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -13,11 +12,12 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const navigationItems = [
+  const menuItems = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { label: 'Kurslar', href: '/admin/kurslar', icon: BookOpen },
-    { label: 'Etkinlikler', href: '/admin/etkinlikler', icon: Calendar },
-    { label: 'Kullanıcılar', href: '/admin/kullanicilar', icon: Users },
+    { label: 'Kurslar', href: '/admin/courses', icon: BookOpen },
+    { label: 'Projeler', href: '/admin/projects', icon: Folder },
+    { label: 'Etkinlikler', href: '/admin/events', icon: Calendar },
+    { label: 'Kullanıcılar', href: '/admin/users', icon: Users },
   ];
   
   const handleLogout = () => {
@@ -72,7 +72,7 @@ const AdminLayout: React.FC = () => {
           } overflow-y-auto`}
         >
           <div className="flex flex-col p-4 space-y-1">
-            {navigationItems.map((item) => (
+            {menuItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}

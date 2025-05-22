@@ -1,288 +1,447 @@
-
-import React from 'react';
-import { useParams } from 'react-router-dom';
+// src/pages/CourseDetail.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
+// ... (diğer UI component importları aynı kalacak)
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, Users, Calendar, BookOpen, Award, CheckCircle, User, ArrowRight } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Clock, Users, Calendar, BookOpen, Star as StarIcon, CheckCircle, User, ArrowRight, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth'; // Düzeltilmiş import yolu
+import {
+  Course as CourseType,
+  Review as ReviewType,
+  ReviewCreatePayload,
+  ApiError,
+  ReviewUser
+} from '@/lib/types';
+import { STATIC_FILES_DOMAIN, reviewApi, courseApi } from '@/lib/api';
+import { useToast } from "@/components/ui/use-toast";
+
+// StarRating component (değişiklik yok)
+const StarRating: React.FC<{
+  rating: number;
+  onRating?: (rate: number) => void;
+  starSize?: string;
+  interactive?: boolean;
+}> = ({
+  rating,
+  onRating,
+  starSize = "h-5 w-5",
+  interactive = true
+}) => {
+  return (
+    <div className="flex items-center space-x-0.5">
+      {[...Array(5)].map((_, index) => {
+        const starValue = index + 1;
+        return (
+          <StarIcon
+            key={starValue}
+            className={cn(
+              starSize,
+              starValue <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600",
+              interactive && onRating && "cursor-pointer hover:text-yellow-300"
+            )}
+            onClick={() => interactive && onRating && onRating(starValue)}
+          />
+        );
+      })}
+    </div>
+  );
+};
 
 const CourseDetail: React.FC = () => {
-  const { id } = useParams();
-  
-  // Örnek kurs verisi (gerçek uygulamada API'den gelecek)
-  const course = {
-    id: id || '1',
-    title: 'Arduino ile Robotik Programlama',
-    instructor: 'Dr. Mehmet Yılmaz',
-    level: 'Orta Seviye',
-    duration: '8 Hafta',
-    students: 124,
-    rating: 4.8,
-    reviews: 56,
-    price: 1299.99,
-    startDate: '15 Ağustos 2023',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475',
-    description: 'Bu kurs, Arduino platformunu kullanarak robotik projeleri geliştirmeyi öğrenmek isteyenler için tasarlanmıştır. Sensörler, motorlar ve diğer elektronik bileşenleri kullanarak kendi robotlarınızı programlamayı öğreneceksiniz.',
-    objectives: [
-      'Arduino platformunu etkili bir şekilde kullanabilmek',
-      'Temel elektronik devreleri kurabilmek',
-      'Sensörlerden veri okuyabilmek',
-      'Motor kontrolü yapabilmek',
-      'Kendi robotik projelerinizi geliştirebilmek',
-      'Gerçek dünya problemlerini robotik çözümlerle ele alabilmek'
-    ],
-    contents: [
-      {
-        week: 'Hafta 1',
-        title: 'Arduino Temelleri',
-        lessons: ['Arduino IDE Kurulumu', 'İlk Programı Yazma', 'LED Kontrolü']
-      },
-      {
-        week: 'Hafta 2',
-        title: 'Sensörler ve Veri Okuma',
-        lessons: ['Sıcaklık Sensörleri', 'Ultrasonik Mesafe Sensörleri', 'IR Sensörler']
-      },
-      {
-        week: 'Hafta 3',
-        title: 'Motor Kontrolü',
-        lessons: ['DC Motorlar', 'Servo Motorlar', 'H-Bridge Sürücüler']
-      },
-      {
-        week: 'Hafta 4',
-        title: 'İletişim Protokolleri',
-        lessons: ['I2C', 'SPI', 'UART']
-      },
-      {
-        week: 'Hafta 5',
-        title: 'Çizgi İzleyen Robot',
-        lessons: ['Sensör Dizilimi', 'PID Kontrolü', 'Hız Optimizasyonu']
-      },
-      {
-        week: 'Hafta 6',
-        title: 'Engel Algılayan Robot',
-        lessons: ['Ultrasonik Sensör Kullanımı', 'Karar Algoritmaları', 'Haritalama']
-      },
-      {
-        week: 'Hafta 7',
-        title: 'Bluetooth Kontrollü Robot',
-        lessons: ['HC-05 Modülü', 'Android Uygulama Entegrasyonu', 'Komut Seti Tasarımı']
-      },
-      {
-        week: 'Hafta 8',
-        title: 'Final Projesi',
-        lessons: ['Proje Geliştirme', 'Test ve Optimizasyon', 'Sunumlar']
+  const { id: courseIdFromParams } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { userInfo, token, updateUserInfo } = useAuth();
+  const { toast } = useToast();
+
+  const [course, setCourse] = useState<CourseType | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  // ... (CourseDetail component'inin geri kalan state ve fonksiyon tanımları öncekiyle aynı) ...
+  const [error, setError] = useState<string | null>(null);
+
+  const [reviews, setReviews] = useState<ReviewType[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState<boolean>(false);
+  const [newReview, setNewReview] = useState<ReviewCreatePayload>({ rating: 0, comment: '' });
+  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState<boolean>(false);
+
+  const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
+  const [enrolling, setEnrolling] = useState<boolean>(false);
+
+  const fetchCourseData = useCallback(async () => {
+    if (!courseIdFromParams || courseIdFromParams.startsWith('placeholder-')) {
+      setError(courseIdFromParams ? "Geçersiz kurs ID'si." : "Kurs ID'si bulunamadı.");
+      setLoading(false); setCourse(null); setReviews([]);
+      return;
+    }
+
+    setLoading(true); setLoadingReviews(true); setError(null);
+    try {
+      const [courseData, courseReviews] = await Promise.all([
+        courseApi.getById(courseIdFromParams),
+        reviewApi.getReviews(courseIdFromParams)
+      ]);
+      setCourse(courseData);
+      setReviews(courseReviews);
+
+      if (userInfo && courseData && userInfo.enrolledCourseIds && Array.isArray(userInfo.enrolledCourseIds)) {
+        const userIsEnrolled = userInfo.enrolledCourseIds.includes(courseData._id);
+        setIsEnrolled(userIsEnrolled);
+      } else {
+        setIsEnrolled(false);
       }
-    ]
+
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Veri yüklenirken bilinmeyen bir hata oluştu.');
+      console.error("Kurs veya yorum detayı çekilirken hata:", apiError.details || apiError.message || err);
+    } finally {
+      setLoading(false); setLoadingReviews(false);
+    }
+  }, [courseIdFromParams, userInfo]);
+
+  useEffect(() => {
+    fetchCourseData();
+  }, [fetchCourseData]);
+
+  const handleNewReviewChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewReview(prev => ({ ...prev, comment: e.target.value }));
   };
 
+  const handleNewReviewRating = (rating: number) => {
+    setNewReview(prev => ({ ...prev, rating }));
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !courseIdFromParams) {
+      toast({ title: "Hata", description: "Yorum yapmak için giriş yapmalısınız veya geçerli bir kurs ID'si bulunamadı.", variant: "destructive" });
+      return;
+    }
+    if (newReview.rating === 0 || !newReview.comment.trim()) {
+      toast({ title: "Eksik Bilgi", description: "Lütfen puan verin ve yorumunuzu yazın.", variant: "destructive" });
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const createdReview = await reviewApi.createReview(courseIdFromParams, newReview);
+      setReviews(prev => [createdReview, ...prev]);
+      toast({ title: "Başarılı", description: "Yorumunuz eklendi." });
+      setIsReviewModalOpen(false);
+      setNewReview({ rating: 0, comment: '' });
+      if (course) {
+        const newTotalReviews = (course.totalReviews || 0) + 1;
+        const currentTotalRating = (course.averageRating || 0) * (course.totalReviews || 0);
+        const newAverageRating = (currentTotalRating + createdReview.rating) / newTotalReviews;
+        setCourse(prevCourse => prevCourse ? ({ ...prevCourse, averageRating: parseFloat(newAverageRating.toFixed(1)), totalReviews: newTotalReviews }) : null);
+      }
+    } catch (err) {
+      const apiError = err as ApiError;
+      toast({ title: "Yorum Eklenemedi", description: apiError.message || 'Yorum eklenirken bir hata oluştu.', variant: "destructive" });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleEnrollCourse = async () => {
+    if (!userInfo || !token) {
+      toast({ title: "Giriş Gerekli", description: "Kursa kaydolmak için lütfen giriş yapın.", variant: "default" });
+      navigate('/login');
+      return;
+    }
+    if (!course || !course._id) {
+      toast({ title: "Hata", description: "Kurs bilgileri bulunamadı.", variant: "destructive" });
+      return;
+    }
+
+    setEnrolling(true);
+    try {
+      await courseApi.enrollToCourse(course._id);
+      toast({ title: "Başarılı!", description: `"${course.title}" kursuna başarıyla kaydoldunuz.` });
+      setIsEnrolled(true);
+      setCourse(prev => prev ? ({...prev, enrolledStudents: (prev.enrolledStudents || 0) + 1}) : null);
+
+      if (userInfo) {
+        const currentCourseIds: string[] = userInfo.enrolledCourseIds ? [...userInfo.enrolledCourseIds] : [];
+        if (!currentCourseIds.includes(course._id)) {
+          const newCourseIds: string[] = [...currentCourseIds, course._id];
+          updateUserInfo({ enrolledCourseIds: newCourseIds });
+        }
+      }
+
+    } catch (err) {
+      const apiError = err as ApiError;
+      toast({ title: "Kayıt Başarısız", description: apiError.message || "Kursa kaydolunurken bir hata oluştu.", variant: "destructive" });
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  // Yüklenme ve hata durumları (değişiklik yok)
+  if (loading && !course && !error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-lg">Kurs detayları yükleniyor...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+          <p className="text-red-600 text-lg mb-4">Hata: {error}</p>
+          <Link to="/courses">
+            <Button variant="outline">Kurslara Geri Dön</Button>
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+          <p className="text-lg mb-4">Kurs bulunamadı veya yüklenemedi.</p>
+          <Link to="/courses">
+            <Button variant="outline">Kurslara Geri Dön</Button>
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+
+  const formattedStartDate = course.courseStartDate
+    ? new Date(course.courseStartDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : "Belirtilmemiş";
+
+  const getReviewUserName = (reviewUser: ReviewUser): string => {
+    return reviewUser.username;
+  };
+  const getReviewUserAvatarFallback = (reviewUser: ReviewUser): string => {
+    const name = getReviewUserName(reviewUser);
+    return name ? name.substring(0, 2).toUpperCase() : 'K';
+  };
+
+  // JSX'in geri kalanı (değişiklik yok)
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="bg-gradient-to-b from-primary/10 to-background py-12">
-          <div className="container px-6 mx-auto">
-            <div className="flex flex-col md:flex-row gap-8">
-              {/* Course Image */}
-              <div className="md:w-1/2">
-                <div className="rounded-xl overflow-hidden h-[300px] md:h-[400px]">
-                  <img 
-                    src={course.image} 
-                    alt={course.title} 
+        <section className="bg-gradient-to-b from-primary/10 to-background py-12 md:py-16">
+          <div className="container px-4 md:px-6 mx-auto">
+            <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+              <div className="md:w-5/12 lg:w-1/2">
+                <div className="rounded-xl overflow-hidden aspect-video md:aspect-[4/3] shadow-lg bg-muted">
+                  <img
+                    src={course.imageUrl ? (course.imageUrl.startsWith('http') ? course.imageUrl : `${STATIC_FILES_DOMAIN}${course.imageUrl}`) : `https://via.placeholder.com/600x400?text=${encodeURIComponent(course.title || 'Kurs')}`}
+                    alt={course.title || 'Kurs Görseli'}
                     className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = `https://via.placeholder.com/600x400?text=Gorsel+Yuklenemedi`; }}
                   />
                 </div>
               </div>
-              
-              {/* Course Info */}
-              <div className="md:w-1/2 flex flex-col">
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{course.title}</h1>
-                
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-primary" />
-                    <span>{course.instructor}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <BookOpen className="h-4 w-4 mr-2 text-primary" />
-                    <span>{course.level}</span>
-                  </div>
+              <div className="md:w-7/12 lg:w-1/2 flex flex-col">
+                <h1 className="text-3xl md:text-4xl font-bold mb-3 text-foreground">{course.title}</h1>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 text-sm text-muted-foreground">
+                  <div className="flex items-center"> <User className="h-4 w-4 mr-1.5 text-primary" /> <span>{course.instructor}</span> </div>
+                  <div className="flex items-center"> <BookOpen className="h-4 w-4 mr-1.5 text-primary" /> <span>{course.level || 'Tüm Seviyeler'}</span> </div>
                 </div>
-                
-                <p className="text-foreground/70 mb-6">
-                  {course.description}
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center">
-                    <Clock className="h-5 w-5 mr-2 text-primary" />
-                    <div>
-                      <div className="text-sm text-foreground/70">Süre</div>
-                      <div className="font-medium">{course.duration}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-primary" />
-                    <div>
-                      <div className="text-sm text-foreground/70">Öğrenci</div>
-                      <div className="font-medium">{course.students} kişi</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 mr-2 text-primary" />
-                    <div>
-                      <div className="text-sm text-foreground/70">Başlangıç</div>
-                      <div className="font-medium">{course.startDate}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Award className="h-5 w-5 mr-2 text-primary" />
-                    <div>
-                      <div className="text-sm text-foreground/70">Değerlendirme</div>
-                      <div className="font-medium">{course.rating} ({course.reviews} yorum)</div>
-                    </div>
-                  </div>
+                <p className="text-foreground/80 mb-6 text-base leading-relaxed line-clamp-4"> {course.description} </p>
+                <div className="grid grid-cols-2 sm:grid-cols-2 gap-x-4 gap-y-3 mb-6 text-sm">
+                  <div className="flex items-center"> <Clock className="h-5 w-5 mr-2 text-primary shrink-0" /> <div> <div className="text-xs text-muted-foreground">Süre</div> <div className="font-medium text-foreground">{course.duration ? `${course.duration} Saat` : 'Belirtilmemiş'}</div> </div> </div>
+                  <div className="flex items-center"> <Users className="h-5 w-5 mr-2 text-primary shrink-0" /> <div> <div className="text-xs text-muted-foreground">Öğrenci</div> <div className="font-medium text-foreground">{course.enrolledStudents || 0} kişi</div> </div> </div>
+                  <div className="flex items-center"> <Calendar className="h-5 w-5 mr-2 text-primary shrink-0" /> <div> <div className="text-xs text-muted-foreground">Başlangıç</div> <div className="font-medium text-foreground">{formattedStartDate}</div> </div> </div>
+                  <div className="flex items-center"> <StarIcon className="h-5 w-5 mr-2 text-yellow-400 fill-yellow-400 shrink-0" /> <div> <div className="text-xs text-muted-foreground">Değerlendirme</div> <div className="font-medium text-foreground">{(course.averageRating || 0).toFixed(1)} ({course.totalReviews || 0} yorum)</div> </div> </div>
                 </div>
-                
-                <div className="mt-auto space-y-4">
-                  <div className="text-3xl font-bold">{course.price.toLocaleString('tr-TR')} ₺</div>
-                  <Button className="w-full" size="lg">Kursa Kayıt Ol</Button>
+                <div className="mt-auto space-y-3">
+                  <div className="text-3xl font-bold text-foreground">{course.price != null && course.price > 0 ? `${course.price.toLocaleString('tr-TR')} ₺` : "Ücretsiz"}</div>
+                  {isEnrolled ? (
+                    <Button className="w-full text-base" size="lg" asChild>
+                      <Link to={`/learn/courses/${course._id}`}>
+                        <>
+                          Kursa Devam Et <ArrowRight className="ml-2 h-5 w-5"/>
+                        </>
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button className="w-full text-base" size="lg" onClick={handleEnrollCourse} disabled={enrolling} >
+                      {enrolling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {course.price != null && course.price > 0 ? 'Kursa Kayıt Ol' : 'Kursa Ücretsiz Başla'}
+                      {!enrolling && <ArrowRight className="ml-2 h-5 w-5"/>}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </section>
-        
-        {/* Course Content */}
-        <section className="py-12 bg-background">
-          <div className="container px-6 mx-auto">
+        <section className="py-10 md:py-12 bg-muted/20 dark:bg-muted/5">
+          <div className="container px-4 md:px-6 mx-auto">
             <Tabs defaultValue="icerik" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-8">
-                <TabsTrigger value="icerik">Kurs İçeriği</TabsTrigger>
-                <TabsTrigger value="hedefler">Öğrenme Hedefleri</TabsTrigger>
-                <TabsTrigger value="yorumlar">Yorumlar</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 mb-6 md:mb-8 bg-muted p-1 rounded-lg">
+                <TabsTrigger value="icerik" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Kurs İçeriği</TabsTrigger>
+                <TabsTrigger value="hedefler" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Öğrenme Hedefleri</TabsTrigger>
+                <TabsTrigger value="yorumlar" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Yorumlar</TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="icerik" className="mt-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-semibold mb-6">Kurs Müfredatı</h3>
-                    
-                    <div className="space-y-4">
-                      {course.contents.map((week, index) => (
-                        <div key={index} className="border border-border rounded-lg overflow-hidden">
-                          <div className="bg-muted p-4 flex justify-between items-center">
-                            <div>
-                              <span className="text-sm font-medium text-foreground/70">{week.week}</span>
-                              <h4 className="font-medium">{week.title}</h4>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="p-4 space-y-2">
-                            {week.lessons.map((lesson, i) => (
-                              <div key={i} className="flex items-start">
-                                <CheckCircle className="h-5 w-5 mr-3 text-primary/70" />
-                                <span>{lesson}</span>
+              <TabsContent value="icerik" className="mt-2">
+                <Card className="shadow-sm">
+                  <CardContent className="p-4 md:p-6">
+                    <h3 className="text-xl font-semibold mb-4 md:mb-6">Kurs Müfredatı</h3>
+                    {course.curriculum && course.curriculum.length > 0 && (!course.curriculum[0] || course.curriculum[0].title !== 'Müfredat Yakında') ? (
+                      <Accordion type="single" collapsible className="w-full space-y-3">
+                        {course.curriculum.map((week, index) => (
+                          <AccordionItem value={`item-${index}`} key={index} className="border border-border rounded-lg bg-card">
+                            <AccordionTrigger className="hover:no-underline px-4 py-3 text-left">
+                              <div className="flex-1">
+                                <span className="text-xs font-medium text-muted-foreground">{week.week}</span>
+                                <h4 className="font-medium text-base text-foreground mt-0.5">{week.title}</h4>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pt-0 pb-3">
+                              <ul className="space-y-2 mt-2 list-inside">
+                                {week.lessons.map((lesson, i) => (
+                                  <li key={i} className="flex items-start text-sm text-muted-foreground">
+                                    <CheckCircle className="h-4 w-4 mr-2.5 mt-0.5 shrink-0 text-green-500" />
+                                    <span>{lesson}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    ) : ( <p className="text-muted-foreground">Bu kurs için müfredat bilgisi henüz eklenmemiş.</p> )}
                   </CardContent>
                 </Card>
               </TabsContent>
-              
-              <TabsContent value="hedefler" className="mt-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-semibold mb-6">Bu Kursta Öğrenecekleriniz</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {course.objectives.map((objective, index) => (
-                        <div key={index} className="flex items-start">
-                          <CheckCircle className="h-5 w-5 mr-3 shrink-0 text-primary" />
-                          <span>{objective}</span>
-                        </div>
-                      ))}
-                    </div>
+              <TabsContent value="hedefler" className="mt-2">
+                <Card className="shadow-sm">
+                  <CardContent className="p-4 md:p-6">
+                    <h3 className="text-xl font-semibold mb-4 md:mb-6">Bu Kursta Öğrenecekleriniz</h3>
+                    {course.learningObjectives && course.learningObjectives.length > 0 && (!course.learningObjectives[0] || course.learningObjectives[0] !== 'Bu kurs için öğrenme hedefleri tanımlanmamış.') ? (
+                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 list-inside">
+                        {course.learningObjectives.map((objective, index) => (
+                          <li key={index} className="flex items-start text-sm text-foreground/90">
+                            <CheckCircle className="h-4 w-4 mr-2.5 mt-0.5 shrink-0 text-primary" />
+                            <span>{objective}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : ( <p className="text-muted-foreground">Bu kurs için öğrenme hedefleri henüz tanımlanmamış.</p> )}
                   </CardContent>
                 </Card>
               </TabsContent>
-              
-              <TabsContent value="yorumlar" className="mt-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-xl font-semibold">Öğrenci Yorumları</h3>
-                      <Button variant="outline">Yorum Yap</Button>
+              <TabsContent value="yorumlar" className="mt-2">
+                <Card className="shadow-sm">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+                      <h3 className="text-xl font-semibold">Öğrenci Yorumları ({loadingReviews ? '...' : reviews.length})</h3>
+                      {userInfo && token && (
+                        <Dialog
+                          open={isReviewModalOpen}
+                          onOpenChange={(open) => {
+                            setIsReviewModalOpen(open);
+                            if (!open) setNewReview({ rating: 0, comment: '' });
+                          }}
+                        >
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" type="button">
+                              Yorum Yap
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Yorumunuzu Ekleyin</DialogTitle>
+                              <DialogDescription>
+                                Kurs hakkındaki düşüncelerinizi ve puanınızı paylaşın.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleSubmitReview} className="space-y-4 pt-2">
+                              <div>
+                                <Label htmlFor="rating" className="mb-1.5 block">Puanınız</Label>
+                                <StarRating rating={newReview.rating} onRating={handleNewReviewRating} interactive={true} starSize="h-6 w-6" />
+                              </div>
+                              <div>
+                                <Label htmlFor="comment" className="mb-1.5 block">Yorumunuz</Label>
+                                <Textarea id="comment" value={newReview.comment} onChange={handleNewReviewChange} placeholder="Düşünceleriniz..." rows={4} required className="resize-none"/>
+                              </div>
+                              <DialogFooter>
+                                <Button type="button" variant="ghost" onClick={() => setIsReviewModalOpen(false)}>İptal</Button>
+                                <Button type="submit" disabled={submittingReview}>
+                                  {submittingReview && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Gönder
+                                </Button>
+                              </DialogFooter>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </div>
-                    
-                    <div className="text-center py-8">
-                      <p className="text-foreground/70">Henüz yorum yapılmamış. İlk yorumu siz yapın!</p>
-                    </div>
+                    {loadingReviews && !reviews.length ? (
+                      <div className="text-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" /> <p className="text-muted-foreground">Yorumlar yükleniyor...</p></div>
+                    ) : reviews.length > 0 ? (
+                      <div className="space-y-6">
+                        {reviews.map((review) => (
+                          <Card key={review._id} className="p-4 bg-card border dark:border-slate-700">
+                            <div className="flex items-start space-x-3 sm:space-x-4">
+                              <Avatar className="h-9 w-9 sm:h-10 sm:w-10">
+                                <AvatarImage
+                                  src={review.user.avatarUrl || `https://avatar.vercel.sh/${getReviewUserName(review.user) || review.user._id}.png?size=40`}
+                                  alt={getReviewUserName(review.user)}
+                                />
+                                <AvatarFallback>{getReviewUserAvatarFallback(review.user)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-baseline justify-between">
+                                  <h4 className="font-semibold text-sm text-foreground">{getReviewUserName(review.user)}</h4>
+                                  <time dateTime={review.createdAt} className="text-xs text-muted-foreground">
+                                    {new Date(review.createdAt).toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                  </time>
+                                </div>
+                                <div className="my-1.5">
+                                  <StarRating rating={review.rating} interactive={false} starSize="h-4 w-4" />
+                                </div>
+                                <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">{review.comment}</p>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10 border border-dashed border-border rounded-md bg-muted/50">
+                        <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-sm text-muted-foreground">Henüz hiç yorum yapılmamış.</p>
+                        {userInfo && <p className="text-xs text-muted-foreground mt-1">Bu kursa ilk yorumu siz yapın!</p>}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>
           </div>
         </section>
-        
-        {/* Related Courses */}
-        <section className="py-12 bg-muted/30">
-          <div className="container px-6 mx-auto">
-            <h2 className="text-2xl font-bold mb-8">Benzer Kurslar</h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="h-48 overflow-hidden">
-                    <img 
-                      src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e" 
-                      alt="Kurs" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-foreground/70">Robotik</span>
-                      <span className="text-sm font-medium">4.5 (42)</span>
-                    </div>
-                    
-                    <h3 className="text-lg font-semibold mb-2">
-                      {i === 1 ? 'Raspberry Pi ile Akıllı Sistemler' : 
-                       i === 2 ? 'Robot Kol Programlama' : 
-                       'Yapay Zeka ve Robotik'}
-                    </h3>
-                    
-                    <div className="flex items-center mt-4 mb-2">
-                      <User className="h-4 w-4 mr-2 text-foreground/70" />
-                      <span className="text-sm text-foreground/70">
-                        {i === 1 ? 'Dr. Ayşe Kaya' : 
-                         i === 2 ? 'Prof. Ali Demir' : 
-                         'Doç. Zeynep Yıldız'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mt-4">
-                      <div className="font-bold">
-                        {(999 + i * 200).toLocaleString('tr-TR')} ₺
-                      </div>
-                      <Button variant="outline" size="sm">Detaylar</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
       </main>
-      
       <Footer />
     </div>
   );
