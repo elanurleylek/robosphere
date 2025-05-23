@@ -2,6 +2,7 @@
 
 // Ortam değişkenleri artık Render'dan doğrudan process.env üzerinden gelecek.
 // dotenv ile ilgili kısımları kaldırıyoruz.
+import 'dotenv/config';  
 
 import express from 'express';
 import cors from 'cors';
