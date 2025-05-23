@@ -174,7 +174,7 @@ app.use('/api/users', userRoutes);
 // `..`: bir üst klasöre (ROBOTIK_OKULU_PROJE_ADI) çıkarız
 // `src`: `src` klasörüne gireriz
 // `dist`: frontend build çıktılarının olduğu klasöre gireriz (sizde 'build' de olabilir, kontrol edin!)
-const frontendPath = path.join(__dirname, '..', 'src', 'dist'); // Burayı 'src', 'build' olarak değiştirebilirsiniz
+const frontendPath = path.join(__dirname, '..', 'dist');
 
 // Frontend build klasörünün varlığını ve doğru yolu konsola yazdırın
 console.log(">>> Frontend statik dosyaları buradan sunuluyor:", frontendPath);
