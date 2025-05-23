@@ -179,7 +179,11 @@ app.use('/api/users', userRoutes);
 // Frontend build klasörünün yolu.
 // Önceki loglarınızda hala /opt/render/project/src/src/dist olarak gösterdiği için,
 // yolu kesinlikle bu şekilde ayarlıyoruz.
-const frontendPath = '/opt/render/project/src/src/dist'; // Doğrudan Render'daki beklenen yolu belirtiyoruz.
+// server.js içinde, frontendPath tanımı
+const frontendPath = path.join(__dirname, 'public', 'frontend_dist');
+// __dirname: /opt/render/project/src/robosphere-backend
+// public: /opt/render/project/src/robosphere-backend/public
+// frontend_dist: /opt/render/project/src/robosphere-backend/public/frontend_dist
 
 // Frontend build klasörünün varlığını ve doğru yolu konsola yazdırın
 console.log(">>> Frontend statik dosyaları buradan sunuluyor:", frontendPath);
