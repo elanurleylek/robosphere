@@ -71,6 +71,7 @@ const allowedOrigins = [
     'https://capacitor.localhost',
     'https://ionic.localhost',
     'https://_capacitor_assets_',
+    'https://robosphere.onrender.com'
 ];
 
 if (process.env.NODE_ENV === 'production' && process.env.FRONTEND_PRODUCTION_URL) {
