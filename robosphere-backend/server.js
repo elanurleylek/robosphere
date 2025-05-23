@@ -1,17 +1,17 @@
 // server.js
 
 // dotenv importunu ve kullanımını tamamen kaldırıyoruz.
-// import dotenv from 'dotenv'; // Bu satırı silin
-// const dotenvResult = dotenv.config(); // Bu satırı silin
+// Artık tüm ortam değişkenleri Render'dan doğrudan process.env üzerinden gelecek.
+// import dotenv from 'dotenv';
+// const dotenvResult = dotenv.config();
 
-// if (dotenvResult.error) { // Bu bloğu tamamen silin
+// if (dotenvResult.error) {
 //     console.error("### .env YÜKLENİRKEN KRİTİK HATA:", dotenvResult.error.message);
 // } else {
 //     console.log(">>> .env dosyası başarıyla yüklendi.");
 // }
 
-// dotenv importu kalktığı için bu kontrol satırlarını da kaldırabiliriz.
-// Ortam değişkenleri artık Render'dan doğrudan process.env üzerinden gelecek.
+// dotenv olmadığı için bu kontrolleri de kaldırıyoruz.
 // if (!process.env.JWT_SECRET) {
 //     console.error("\n### KRİTİK HATA: JWT_SECRET ortam değişkeni bulunamadı! .env dosyasını kontrol edin. ###\n");
 //     process.exit(1);
@@ -48,7 +48,7 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// process.env üzerinden değişkenleri doğrudan alıyoruz, dotenv'e gerek yok
+// process.env üzerinden değişkenleri doğrudan alıyoruz.
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
@@ -71,12 +71,14 @@ const allowedOrigins = [
     'https://capacitor.localhost',
     'https://ionic.localhost',
     'https://_capacitor_assets_',
+    // Buraya Render canlı URL'sini doğrudan ekliyoruz, Render ortam değişkeninden gelmesi de sorun yaratırsa diye
     'https://robosphere.onrender.com'
 ];
 
+// Bu if bloğu artık gereksiz olabilir çünkü yukarıda doğrudan ekledik.
+// Ancak eğer FRONTEND_PRODUCTION_URL değişkenini Render'a eklediyseniz, bunu koruyabilirsiniz.
 if (process.env.NODE_ENV === 'production' && process.env.FRONTEND_PRODUCTION_URL) {
     allowedOrigins.push(process.env.FRONTEND_PRODUCTION_URL);
-    allowedOrigins.push('https://robosphere.onrender.com'); // Render'daki canlı backend adresiniz
 }
 
 const uniqueAllowedOrigins = [...new Set(allowedOrigins)].filter(Boolean);
@@ -175,12 +177,8 @@ app.use('/api/users', userRoutes);
 // #######################################################################
 
 // Frontend build klasörünün yolu.
-// Önceki denemeler ve loglar ışığında kesin yolu belirliyoruz.
-// Build Command'ınız src içinde build ettiyse ve Render'ın ana klasörü /opt/render/project/src/ ise,
-// dist klasörü /opt/render/project/src/src/dist içinde oluşacaktır.
-// `__dirname`: `/opt/render/project/src/robosphere-backend`
-// `path.join(__dirname, '..', 'src', 'dist')` -> `/opt/render/project/src/src/dist`
-
+// Önceki loglarınızda hala /opt/render/project/src/src/dist olarak gösterdiği için,
+// yolu kesinlikle bu şekilde ayarlıyoruz.
 const frontendPath = '/opt/render/project/src/src/dist'; // Doğrudan Render'daki beklenen yolu belirtiyoruz.
 
 // Frontend build klasörünün varlığını ve doğru yolu konsola yazdırın
