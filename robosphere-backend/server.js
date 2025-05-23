@@ -1,25 +1,28 @@
 // server.js
 
-import dotenv from 'dotenv';
-const dotenvResult = dotenv.config();
+// dotenv importunu ve kullanımını tamamen kaldırıyoruz.
+// import dotenv from 'dotenv'; // Bu satırı silin
+// const dotenvResult = dotenv.config(); // Bu satırı silin
 
-if (dotenvResult.error) {
-    console.error("### .env YÜKLENİRKEN KRİTİK HATA:", dotenvResult.error.message);
-} else {
-    console.log(">>> .env dosyası başarıyla yüklendi.");
-}
+// if (dotenvResult.error) { // Bu bloğu tamamen silin
+//     console.error("### .env YÜKLENİRKEN KRİTİK HATA:", dotenvResult.error.message);
+// } else {
+//     console.log(">>> .env dosyası başarıyla yüklendi.");
+// }
 
-if (!process.env.JWT_SECRET) {
-    console.error("\n### KRİTİK HATA: JWT_SECRET ortam değişkeni bulunamadı! .env dosyasını kontrol edin. ###\n");
-    process.exit(1);
-}
-if (!process.env.MONGO_URI) {
-    console.error("\n### KRİTİK HATA: MONGO_URI ortam değişkeni bulunamadı! .env dosyasını kontrol edin. ###\n");
-    process.exit(1);
-}
-if (!process.env.GOOGLE_API_KEY) {
-    console.warn("### UYARI: GOOGLE_API_KEY ortam değişkeni bulunamadı. AI Asistanı çalışmayabilir.");
-}
+// dotenv importu kalktığı için bu kontrol satırlarını da kaldırabiliriz.
+// Ortam değişkenleri artık Render'dan doğrudan process.env üzerinden gelecek.
+// if (!process.env.JWT_SECRET) {
+//     console.error("\n### KRİTİK HATA: JWT_SECRET ortam değişkeni bulunamadı! .env dosyasını kontrol edin. ###\n");
+//     process.exit(1);
+// }
+// if (!process.env.MONGO_URI) {
+//     console.error("\n### KRİTİK HATA: MONGO_URI ortam değişkeni bulunamadı! .env dosyasını kontrol edin. ###\n");
+//     process.exit(1);
+// }
+// if (!process.env.GOOGLE_API_KEY) {
+//     console.warn("### UYARI: GOOGLE_API_KEY ortam değişkeni bulunamadı. AI Asistanı çalışmayabilir.");
+// }
 
 import express from 'express';
 import cors from 'cors';
@@ -45,6 +48,7 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// process.env üzerinden değişkenleri doğrudan alıyoruz, dotenv'e gerek yok
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
@@ -162,7 +166,7 @@ app.use('/api/users', userRoutes);
 
 // Eski root rotayı burada kaldırıyoruz veya aşağı taşıyoruz, çünkü frontend ele alacak
 // app.get('/', (req, res) => {
-//   res.send(`Robosphere API Çalışıyor! Ortam: ${process.env.NODE_ENV || 'development'}`);
+//   res.send(`Robosphere API Çalışıyor! Ortam: ${process.env.NODE_ENV || 'development'}`);
 // });
 
 // #######################################################################
@@ -170,11 +174,13 @@ app.use('/api/users', userRoutes);
 // #######################################################################
 
 // Frontend build klasörünün yolu.
-// __dirname: `robosphere-backend` klasörünün yolu
-// `..`: bir üst klasöre (ROBOTIK_OKULU_PROJE_ADI) çıkarız
-// `src`: `src` klasörüne gireriz
-// `dist`: frontend build çıktılarının olduğu klasöre gireriz (sizde 'build' de olabilir, kontrol edin!)
-const frontendPath = path.join(__dirname, '..', 'dist');
+// Önceki denemeler ve loglar ışığında kesin yolu belirliyoruz.
+// Build Command'ınız src içinde build ettiyse ve Render'ın ana klasörü /opt/render/project/src/ ise,
+// dist klasörü /opt/render/project/src/src/dist içinde oluşacaktır.
+// `__dirname`: `/opt/render/project/src/robosphere-backend`
+// `path.join(__dirname, '..', 'src', 'dist')` -> `/opt/render/project/src/src/dist`
+
+const frontendPath = '/opt/render/project/src/src/dist'; // Doğrudan Render'daki beklenen yolu belirtiyoruz.
 
 // Frontend build klasörünün varlığını ve doğru yolu konsola yazdırın
 console.log(">>> Frontend statik dosyaları buradan sunuluyor:", frontendPath);
