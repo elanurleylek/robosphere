@@ -7,10 +7,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import Header from '@/components/Header'; // Eğer varsa
+import Footer from '@/components/Footer'; // Eğer varsa
 import { useAuth } from '@/hooks/useAuth'; // Düzeltilmiş import yolu
 import { AuthUser } from '@/lib/types';
+
+// AuthApiResponse ve AxiosErrorLike arayüzleri ile isAxiosErrorLike type guard'ını
+// Login.tsx dosyanızda kullanmıyorsunuz çünkü fetch kullanıyorsunuz,
+// bu nedenle onlara burada ihtiyacınız yok (veya fetch hatalarını farklı yakalıyorsunuz).
+// Eğer axios'a geri dönerseniz, onları tekrar eklemeniz gerekir.
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -31,11 +36,39 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      // API Base URL'sini ortam değişkeninden al
+      // Projenizin kurulumuna göre doğru değişkeni kullanın:
+      // Vite projeleri için: import.meta.env.VITE_API_BASE_URL
+      // Create React App (CRA) projeleri için: process.env.REACT_APP_API_URL
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Veya process.env.REACT_APP_API_URL
+
+      // Hata ayıklama için ortam değişkenini logla
+      console.log("Using API Base URL for Login:", API_BASE_URL);
+      // Vite'ta tüm ortam değişkenlerini görmek için (isteğe bağlı):
+      // console.log("All Environment Variables:", import.meta.env);
+
+
+      if (!API_BASE_URL) {
+         // Eğer ortam değişkeni tanımlanmamışsa hata ver
+         console.error("API URL environment variable is not defined!");
+         toast({ title: "Yapılandırma Hatası", description: "API URL'si tanımlanmamış. Lütfen .env dosyanızı ve sunucu başlatma komutunuzu kontrol edin.", variant: "destructive" });
+         setIsLoading(false);
+         return;
+      }
+
+      // >>>>>>>>>> BURADAKİ URL'Yİ DEĞİŞTİRİYORUZ <<<<<<<<<<<
+      const response = await fetch(`${API_BASE_URL}/auth/login`, { // Ortam değişkeni + endpoint
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+          // fetch ile withCredentials genellikle 'credentials: "include"' şeklinde kullanılır
+          // Backend'iniz session cookie kullanıyorsa bu gerekli olabilir.
+          // credentials: 'include',
+        },
         body: JSON.stringify({ email, password }),
       });
+      // >>>>>>>>>> DEĞİŞİKLİK BİTTİ <<<<<<<<<<<
+
 
       const data: {
         token?: string;
@@ -50,7 +83,8 @@ const Login = () => {
       } = await response.json();
 
       if (!response.ok || !data.token) {
-        throw new Error(data.message || 'E-posta veya şifre hatalı.');
+        // fetch'te hata yanıtları (4xx, 5xx) hata fırlatmaz, response.ok false olur
+        throw new Error(data.message || response.statusText || 'Giriş sırasında bir hata oluştu.');
       }
 
       if (!data._id || !data.name || !data.email) {
@@ -64,13 +98,13 @@ const Login = () => {
         _id: data._id,
         name: data.name,
         email: data.email,
-        role: data.role || 'user',
+        role: data.role || 'user', // Varsayılan rol
         avatar: data.avatar,
         enrolledCourseIds: data.enrolledCourseIds,
         bio: data.bio,
       };
 
-      login(loggedInUser, data.token);
+      login(loggedInUser, data.token); // useAuth hook'unu kullanarak login state'ini güncelle
 
       toast({
         title: "Başarılı",
@@ -78,7 +112,7 @@ const Login = () => {
       });
 
       setTimeout(() => {
-        navigate('/');
+        navigate('/'); // Ana sayfaya yönlendirme
       }, 1500);
 
     } catch (error) {
@@ -95,7 +129,7 @@ const Login = () => {
   };
 
   // JSX aynı kalacak...
-  return (
+    return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
