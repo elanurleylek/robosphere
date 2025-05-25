@@ -34,6 +34,12 @@ const projectSchema = new mongoose.Schema({
     type: String,
     required: false,
     trim: true
+  },
+  // --- PROJE SAHİBİ ALANI ---
+  owner: { // <-- Bu alanı ekleyin
+    type: mongoose.Schema.Types.ObjectId, // Sahibin ID'si bir ObjectId olacak
+    ref: 'User', // Bu ObjectId 'User' modeline referans veriyor
+    required: [true, 'Projenin bir sahibi olmalıdır.'] // Her projenin bir sahibi olmak zorunda
   }
 }, {
   timestamps: true // createdAt ve updatedAt alanlarını otomatik ekler

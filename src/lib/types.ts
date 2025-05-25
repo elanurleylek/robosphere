@@ -61,7 +61,9 @@ export interface Review {
 
 export interface BlogPostAuthor {
   _id: string;
-  username: string;
+  username?: string; // Backend populate ediyor
+  name?: string;     // Backend User modelde name alanı varsa ve populate ediyorsa ekleyin
+  avatar?: string | null; 
 }
 
 export interface BlogPost {

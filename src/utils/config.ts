@@ -1,0 +1,1 @@
+export const STATIC_FILES_DOMAIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'; 

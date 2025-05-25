@@ -1,60 +1,60 @@
+// src/components/Footer.tsx
+
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Cpu, Github, Instagram, Twitter, Youtube } from 'lucide-react';
+import { Link } from 'react-router-dom'; // Link bileşeni için import edildi
+import { Bot, Github, Instagram, Twitter, Youtube } from 'lucide-react'; // Cpu yerine Bot ikonu kullanıldı
 
 const Footer: React.FC = () => {
   return (
     <footer className="bg-background py-12 border-t border-border">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"> {/* lg:grid-cols-3 olarak güncellendi (4. sütun kaldırıldığı için) */}
           {/* Column 1: Logo and Description */}
           <div>
             <h4 className="text-lg font-semibold mb-4 flex items-center">
-              <Cpu className="mr-2 h-6 w-6 text-primary" />
-              Lovable
+              <Bot className="mr-2 h-6 w-6 text-primary" /> {/* Bot ikonu ve proje adı */}
+              Robosphere
             </h4>
             <p className="text-sm text-foreground/70 mb-4">
-              Lovable is a platform for creating and sharing AI-powered applications.
+              Robosphere, robotik ve yapay zeka meraklılarını bir araya getiren bir platformdur. Bilgi paylaşın, projeler oluşturun ve birlikte öğrenin.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-foreground/70 hover:text-primary transition-colors">
+              {/* Sosyal medya linkleri - Kendi linklerinizle güncelleyin */}
+              <a href="https://github.com/robosphere-project" target="_blank" rel="noopener noreferrer" className="text-foreground/70 hover:text-primary transition-colors">
                 <Github className="h-5 w-5" />
               </a>
-              <a href="#" className="text-foreground/70 hover:text-primary transition-colors">
+              <a href="https://instagram.com/robosphere-project" target="_blank" rel="noopener noreferrer" className="text-foreground/70 hover:text-primary transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="text-foreground/70 hover:text-primary transition-colors">
+              <a href="https://twitter.com/robosphere-project" target="_blank" rel="noopener noreferrer" className="text-foreground/70 hover:text-primary transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-foreground/70 hover:text-primary transition-colors">
+              <a href="https://youtube.com/robosphere-project" target="_blank" rel="noopener noreferrer" className="text-foreground/70 hover:text-primary transition-colors">
                 <Youtube className="h-5 w-5" />
               </a>
             </div>
           </div>
 
-          {/* Column 2: Quick Links */}
+          {/* Column 2: Quick Links - Yeni görsele göre güncellendi */}
           <div>
             <h6 className="text-md font-semibold mb-4">Hızlı Bağlantılar</h6>
             <ul className="text-sm">
               <li className="mb-2">
-                <a href="#" className="hover:text-primary transition-colors">Anasayfa</a>
+                <Link to="/courses" className="hover:text-primary transition-colors">Kurslar</Link>
               </li>
               <li className="mb-2">
-                <a href="#" className="hover:text-primary transition-colors">Kurslar</a>
+                <Link to="/projects" className="hover:text-primary transition-colors">Projeler</Link> {/* Yeni Eklendi */}
               </li>
               <li className="mb-2">
-                <a href="#" className="hover:text-primary transition-colors">Etkinlikler</a>
-              </li>
-              <li className="mb-2">
-                <a href="#" className="hover:text-primary transition-colors">Blog</a>
+                <Link to="/blog" className="hover:text-primary transition-colors">Blog</Link>
               </li>
               <li>
-                <a href="#" className="hover:text-primary transition-colors">İletişim</a>
+                <Link to="/lab" className="hover:text-primary transition-colors">Lab</Link> {/* Yeni Eklendi */}
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Courses */}
+          {/* Column 3: Courses (Popüler Kurslar) - Bu bölüm değiştirilmeden bırakıldı */}
           <div>
             <h6 className="text-md font-semibold mb-4">Popüler Kurslar</h6>
             <ul className="text-sm">
@@ -73,28 +73,12 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Column 4: Newsletter Signup */}
-          <div>
-            <h6 className="text-md font-semibold mb-4">Bültene Kayıt Ol</h6>
-            <p className="text-sm text-foreground/70 mb-4">
-              En son robotik haberleri ve kursları kaçırmayın!
-            </p>
-            <div className="flex">
-              <input
-                type="email"
-                placeholder="E-posta adresiniz"
-                className="bg-secondary rounded-l-md px-4 py-2 text-sm focus:outline-none w-full"
-              />
-              <Button className="rounded-l-none bg-primary hover:bg-primary/90 text-sm">
-                Abone Ol
-              </Button>
-            </div>
-          </div>
+          {/* Bülten Kayıt Bölümü önceki adımda tamamen kaldırıldığı için burada yer almıyor */}
         </div>
 
         {/* Copyright Section */}
         <div className="mt-12 text-center text-xs text-foreground/50">
-          © {new Date().getFullYear()} Lovable. Tüm hakları saklıdır.
+          © {new Date().getFullYear()} Robosphere. Tüm hakları saklıdır.
         </div>
       </div>
     </footer>

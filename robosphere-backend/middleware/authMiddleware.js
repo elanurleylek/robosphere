@@ -67,7 +67,7 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-// --- admin middleware'i (değişiklik yok, protect'ten sonra kullanılır) ---
+// --- admin middleware'i (değişiklik yok, protect'ten sonra kullanılır) --- 
 const admin = (req, res, next) => {
   // Bu middleware'in çalışması için req.user'ın protect tarafından doldurulmuş olması gerekir.
   // Yani admin middleware'i genellikle protect'ten SONRA kullanılır bir rotada.

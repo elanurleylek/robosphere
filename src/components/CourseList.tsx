@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Course } from '../lib/types';
-import { courseApi } from '../lib/api';
+import { courseApi, STATIC_FILES_DOMAIN } from '../lib/api';
 
 function CourseList() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -63,9 +63,14 @@ function CourseList() {
               <div key={course._id} className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 flex flex-col">
                 <div className="relative h-48 w-full">
                   <img 
-                    src={course.imageUrl || '/placeholder-course.jpg'} 
+                    src={course.imageUrl ? (course.imageUrl.startsWith('http') ? course.imageUrl : `${STATIC_FILES_DOMAIN}${course.imageUrl}`) : `${STATIC_FILES_DOMAIN}/default-course.png`}
                     alt={course.title}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                       console.warn("Kurs resmi yüklenemedi:", (e.target as HTMLImageElement).src, "-> Varsayılan resme geçiliyor.");
+                      (e.target as HTMLImageElement).onerror = null;
+                      (e.target as HTMLImageElement).src = `${STATIC_FILES_DOMAIN}/default-course.png`;
+                    }}
                   />
                 </div>
                 <div className="p-6 flex flex-col flex-grow">

@@ -1,4 +1,3 @@
-// src/pages/CourseDetail.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -6,8 +5,11 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 // ... (diğer UI component importları aynı kalacak)
 import { Card, CardContent } from '@/components/ui/card';
+// Accordion artık kullanılmayacağı için kaldırabilirsiniz, ama dursun zarar vermez
+// import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+// Tabs bileşenlerini tutalım
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -45,7 +47,6 @@ const StarRating: React.FC<{
           <StarIcon
             key={starValue}
             className={cn(
-              starSize,
               starValue <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600",
               interactive && onRating && "cursor-pointer hover:text-yellow-300"
             )}
@@ -86,6 +87,7 @@ const CourseDetail: React.FC = () => {
 
     setLoading(true); setLoadingReviews(true); setError(null);
     try {
+      // courseApi.getById çağrısı hala kurs bilgilerini (başlık, eğitmen vs.) getirecek
       const [courseData, courseReviews] = await Promise.all([
         courseApi.getById(courseIdFromParams),
         reviewApi.getReviews(courseIdFromParams)
@@ -243,7 +245,7 @@ const CourseDetail: React.FC = () => {
     return name ? name.substring(0, 2).toUpperCase() : 'K';
   };
 
-  // JSX'in geri kalanı (değişiklik yok)
+  // JSX'in geri kalanı
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -254,10 +256,14 @@ const CourseDetail: React.FC = () => {
               <div className="md:w-5/12 lg:w-1/2">
                 <div className="rounded-xl overflow-hidden aspect-video md:aspect-[4/3] shadow-lg bg-muted">
                   <img
-                    src={course.imageUrl ? (course.imageUrl.startsWith('http') ? course.imageUrl : `${STATIC_FILES_DOMAIN}${course.imageUrl}`) : `https://via.placeholder.com/600x400?text=${encodeURIComponent(course.title || 'Kurs')}`}
+                    src={course.imageUrl ? (course.imageUrl.startsWith('http') ? course.imageUrl : `${STATIC_FILES_DOMAIN}${course.imageUrl}`) : `${STATIC_FILES_DOMAIN}/default-course.png`}
                     alt={course.title || 'Kurs Görseli'}
                     className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = `https://via.placeholder.com/600x400?text=Gorsel+Yuklenemedi`; }}
+                    onError={(e) => {
+                      console.warn("Kurs detay resmi yüklenemedi:", (e.target as HTMLImageElement).src, "-> Varsayılan resme geçiliyor.");
+                      (e.target as HTMLImageElement).onerror = null;
+                      (e.target as HTMLImageElement).src = `${STATIC_FILES_DOMAIN}/default-course.png`;
+                    }}
                   />
                 </div>
               </div>
@@ -298,60 +304,20 @@ const CourseDetail: React.FC = () => {
         </section>
         <section className="py-10 md:py-12 bg-muted/20 dark:bg-muted/5">
           <div className="container px-4 md:px-6 mx-auto">
-            <Tabs defaultValue="icerik" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 mb-6 md:mb-8 bg-muted p-1 rounded-lg">
-                <TabsTrigger value="icerik" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Kurs İçeriği</TabsTrigger>
-                <TabsTrigger value="hedefler" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Öğrenme Hedefleri</TabsTrigger>
+            {/* Tabs defaultValue'yu yorumlar olarak değiştirin */}
+            <Tabs defaultValue="yorumlar" className="w-full">
+              {/* TabsList'in içindeki diğer TabsTrigger'ları silin */}
+              {/* grid-cols-1 yapabilirsiniz, veya sadece tek bir element olduğu için bırakabilirsiniz */}
+              <TabsList className="grid w-full grid-cols-1 mb-6 md:mb-8 bg-muted p-1 rounded-lg mx-auto max-w-sm"> {/* grid-cols-1 ve max-width ekledim */}
+                {/* <TabsTrigger value="icerik" ...>...</TabsTrigger> */} {/* Bu satırı sildik */}
+                {/* <TabsTrigger value="hedefler" ...>...</TabsTrigger> */} {/* Bu satırı sildik */}
                 <TabsTrigger value="yorumlar" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">Yorumlar</TabsTrigger>
               </TabsList>
-              <TabsContent value="icerik" className="mt-2">
-                <Card className="shadow-sm">
-                  <CardContent className="p-4 md:p-6">
-                    <h3 className="text-xl font-semibold mb-4 md:mb-6">Kurs Müfredatı</h3>
-                    {course.curriculum && course.curriculum.length > 0 && (!course.curriculum[0] || course.curriculum[0].title !== 'Müfredat Yakında') ? (
-                      <Accordion type="single" collapsible className="w-full space-y-3">
-                        {course.curriculum.map((week, index) => (
-                          <AccordionItem value={`item-${index}`} key={index} className="border border-border rounded-lg bg-card">
-                            <AccordionTrigger className="hover:no-underline px-4 py-3 text-left">
-                              <div className="flex-1">
-                                <span className="text-xs font-medium text-muted-foreground">{week.week}</span>
-                                <h4 className="font-medium text-base text-foreground mt-0.5">{week.title}</h4>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="px-4 pt-0 pb-3">
-                              <ul className="space-y-2 mt-2 list-inside">
-                                {week.lessons.map((lesson, i) => (
-                                  <li key={i} className="flex items-start text-sm text-muted-foreground">
-                                    <CheckCircle className="h-4 w-4 mr-2.5 mt-0.5 shrink-0 text-green-500" />
-                                    <span>{lesson}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    ) : ( <p className="text-muted-foreground">Bu kurs için müfredat bilgisi henüz eklenmemiş.</p> )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="hedefler" className="mt-2">
-                <Card className="shadow-sm">
-                  <CardContent className="p-4 md:p-6">
-                    <h3 className="text-xl font-semibold mb-4 md:mb-6">Bu Kursta Öğrenecekleriniz</h3>
-                    {course.learningObjectives && course.learningObjectives.length > 0 && (!course.learningObjectives[0] || course.learningObjectives[0] !== 'Bu kurs için öğrenme hedefleri tanımlanmamış.') ? (
-                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 list-inside">
-                        {course.learningObjectives.map((objective, index) => (
-                          <li key={index} className="flex items-start text-sm text-foreground/90">
-                            <CheckCircle className="h-4 w-4 mr-2.5 mt-0.5 shrink-0 text-primary" />
-                            <span>{objective}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : ( <p className="text-muted-foreground">Bu kurs için öğrenme hedefleri henüz tanımlanmamış.</p> )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+              {/* value="icerik" ve value="hedefler" olan TabsContent'ları silin */}
+              {/* <TabsContent value="icerik" ...>...</TabsContent> */} {/* Bu bloğu sildik */}
+              {/* <TabsContent value="hedefler" ...>...</TabsContent> */} {/* Bu bloğu sildik */}
+
+              {/* Sadece yorumlar TabsContent'ı kaldı */}
               <TabsContent value="yorumlar" className="mt-2">
                 <Card className="shadow-sm">
                   <CardContent className="p-4 md:p-6">

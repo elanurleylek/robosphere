@@ -88,6 +88,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Cookie parser middleware
 app.use(cookieParser());
 
+// Statik dosya sunumu için güvenlik başlıkları
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  next();
+});
+
+// Statik dosya sunumu
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
+  setHeaders: (res, path) => {
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
 
 // --- DOSYA YÜKLEME (MULTER) AYARLARI VE YÜKLEME KLASÖRÜ ---
 const UPLOADS_DIR_NAME = 'uploads';

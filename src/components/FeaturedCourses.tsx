@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -9,6 +8,7 @@ import {
   Cog 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { STATIC_FILES_DOMAIN } from '../lib/api';
 
 // Course card type definition
 interface CourseCardProps {
@@ -138,6 +138,11 @@ const CourseCard: React.FC<CourseCardProps & { className?: string; style?: React
           alt={title} 
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
           loading="lazy"
+          onError={(e) => {
+            console.warn("Featured kurs resmi yüklenemedi:", (e.target as HTMLImageElement).src, "-> Varsayılan resme geçiliyor.");
+            (e.target as HTMLImageElement).onerror = null; // Sonsuz döngüyü önle
+            (e.target as HTMLImageElement).src = `${STATIC_FILES_DOMAIN}/default-course.png`; // Varsayılan resim URL'si
+          }}
         />
         
         {/* Difficulty badge */}

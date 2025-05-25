@@ -1,7 +1,6 @@
-// src/pages/EditProfile.tsx
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Ana axios importu
+import axios from 'axios';
 import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -12,17 +11,35 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
-// DÜZELTME: ApiErrorResponseData types.ts'den import edildi
-import { AuthUser, ApiErrorResponseData } from '@/lib/types';
+import { AuthUser, ApiErrorResponseData } from '@/lib/types'; // AuthUser'ı import ettiğinizden emin olun
+import { STATIC_FILES_DOMAIN } from '@/lib/api';
 
 interface EditProfileFormData {
   name: string;
   bio: string;
 }
 
+interface BasicAxiosErrorShape {
+    response?: {
+        data?: ApiErrorResponseData;
+        status?: number;
+    };
+    config?: object;
+    message?: string;
+}
+
+function isBasicAxiosErrorShape(err: unknown): err is BasicAxiosErrorShape {
+    if (typeof err !== 'object' || err === null) {
+        return false;
+    }
+     return 'response' in err && typeof (err as { response: unknown }).response === 'object' &&
+           'config' in err;
+}
+
+
 const EditProfile: React.FC = () => {
   const navigate = useNavigate();
-  const { userInfo, token, updateUserInfo: contextUpdateUser, loading: authLoading } = useAuth();
+  const { userInfo, token, updateUserInfo, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<EditProfileFormData>({ name: '', bio: '' });
@@ -43,21 +60,23 @@ const EditProfile: React.FC = () => {
         name: userInfo.name || '',
         bio: userInfo.bio || '',
       });
-      
-      const avatarUrl = userInfo.avatar 
-        ? (userInfo.avatar.startsWith('http') 
-          ? userInfo.avatar 
-          : `http://localhost:5000${userInfo.avatar}`)
+
+      const avatarUrl = userInfo.avatar
+        ? (userInfo.avatar.startsWith('http')
+          ? userInfo.avatar
+          : `${STATIC_FILES_DOMAIN}${userInfo.avatar.startsWith('/') ? userInfo.avatar : '/' + userInfo.avatar}`)
         : '/default-avatar.png';
-      
+
       setAvatarPreview(avatarUrl);
-      setCurrentAvatarPath(userInfo.avatar);
+      setCurrentAvatarPath(userInfo.avatar === null ? undefined : userInfo.avatar);
       setPageLoading(false);
     } else if (!userInfo && !authLoading) {
       toast({ title: "Hata", description: "Profili düzenlemek için giriş yapmalısınız.", variant: "destructive" });
       navigate('/login');
     }
+    // ESLint uyarısı kaldırıldı, çünkü bağımlılıklar zaten doğruydu.
   }, [userInfo, authLoading, navigate, toast]);
+
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -68,15 +87,29 @@ const EditProfile: React.FC = () => {
       const file = e.target.files[0];
       if (!file.type.startsWith('image/')) {
         toast({ title: "Hatalı Dosya Türü", description: "Lütfen bir resim dosyası seçin.", variant: "destructive"});
-        e.target.value = ''; 
+        e.target.value = '';
+        setAvatarFile(null);
+        const fallbackUrl = currentAvatarPath
+             ? (currentAvatarPath.startsWith('http')
+               ? currentAvatarPath
+               : `${STATIC_FILES_DOMAIN}${currentAvatarPath.startsWith('/') ? currentAvatarPath : '/' + currentAvatarPath}`)
+             : '/default-avatar.png';
+        setAvatarPreview(fallbackUrl);
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
         toast({ title: "Dosya Boyutu Büyük", description: "Avatar dosya boyutu 5MB'den büyük olamaz.", variant: "destructive"});
-        e.target.value = ''; 
+        e.target.value = '';
+        setAvatarFile(null);
+         const fallbackUrl = currentAvatarPath
+             ? (currentAvatarPath.startsWith('http')
+               ? currentAvatarPath
+               : `${STATIC_FILES_DOMAIN}${currentAvatarPath.startsWith('/') ? currentAvatarPath : '/' + currentAvatarPath}`)
+             : '/default-avatar.png';
+        setAvatarPreview(fallbackUrl);
         return;
       }
-      
+
       setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -85,18 +118,19 @@ const EditProfile: React.FC = () => {
       reader.readAsDataURL(file);
     } else {
       setAvatarFile(null);
-      const avatarUrl = currentAvatarPath 
-        ? (currentAvatarPath.startsWith('http') 
-          ? currentAvatarPath 
-          : `http://localhost:5000${currentAvatarPath}`)
-        : '/default-avatar.png';
-      setAvatarPreview(avatarUrl);
+       const fallbackUrl = currentAvatarPath
+             ? (currentAvatarPath.startsWith('http')
+               ? currentAvatarPath
+               : `${STATIC_FILES_DOMAIN}${currentAvatarPath.startsWith('/') ? currentAvatarPath : '/' + currentAvatarPath}`)
+             : '/default-avatar.png';
+      setAvatarPreview(fallbackUrl);
     }
   };
 
   const handleRemoveAvatar = async () => {
     setAvatarFile(null);
     setAvatarPreview('/default-avatar.png');
+    setCurrentAvatarPath(undefined);
     toast({ title: "Bilgi", description: "Avatar kaldırılmak üzere işaretlendi. Kaydettiğinizde uygulanacaktır." });
   };
 
@@ -115,12 +149,14 @@ const EditProfile: React.FC = () => {
 
     if (avatarFile) {
       submissionData.append('avatarImage', avatarFile);
-    } else if (avatarPreview === '/default-avatar.png' && currentAvatarPath && currentAvatarPath !== '' && !currentAvatarPath.includes('default-avatar.png')) {
-      submissionData.append('removeAvatar', 'true');
     }
+     else if (currentAvatarPath === undefined && userInfo.avatar && userInfo.avatar !== '' && !userInfo.avatar.includes('default-avatar.png')) {
+        submissionData.append('removeAvatar', 'true');
+     }
+
 
     try {
-      const response = await axios.put<AuthUser>(
+      const response = await axios.put<AuthUser>( // AuthUser tipi burada da kullanıldı
         `http://localhost:5000/api/users/profile`,
         submissionData,
         {
@@ -132,33 +168,30 @@ const EditProfile: React.FC = () => {
 
       toast({ title: "Başarılı", description: "Profiliniz başarıyla güncellendi." });
 
-      if (contextUpdateUser && response.data) {
-        contextUpdateUser(response.data);
+      if (updateUserInfo && response.data) {
+        console.log("Backend Update Response Data:", response.data); // <-- Debug log
+        console.log("Backend Update Response Avatar Path:", response.data.avatar); // <-- Backend'den dönen yeni avatar yolunu logla
+
+        updateUserInfo(response.data);
       }
 
-      navigate(`/profile/${userInfo._id}`);
+      if (userInfo?._id) {
+         navigate(`/profile/${userInfo._id}`);
+      } else {
+         navigate('/dashboard');
+      }
+
     } catch (err: unknown) {
       console.error('Profil güncelleme hatası:', err);
-      let errorMessage = "Bir şeyler ters gitti.";
+      let errorMessage = "Profil güncelleme sırasında bir hata oluştu.";
 
-      // DÜZELTME: Manuel AxiosError benzeri kontrol (axios.isAxiosError olmadan)
-      // Hatanın bir obje olduğunu ve tipik axios hata özelliklerine (response, config) sahip olup olmadığını kontrol ediyoruz.
-      if (
-        err &&
-        typeof err === 'object' &&
-        (err as { response?: unknown }).response !== undefined && // 'response' özelliği undefined değilse
-        (err as { config?: unknown }).config !== undefined       // 'config' özelliği undefined değilse
-      ) {
-        // Bu bir AxiosError'a benziyor.
-        const axiosError = err as { response?: { data?: ApiErrorResponseData }, message?: string };
-        if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
-        } else if (axiosError.message) { // response.data.message yoksa genel axios mesajı
-          errorMessage = axiosError.message;
+      if (isBasicAxiosErrorShape(err)) {
+             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             const axiosErr = err as any;
+             errorMessage = (axiosErr.response?.data as ApiErrorResponseData)?.message || axiosErr.message || errorMessage;
+        } else if (err instanceof Error) {
+           errorMessage = err.message;
         }
-      } else if (err instanceof Error) { // Genel Error kontrolü
-        errorMessage = err.message;
-      }
 
       toast({
         title: "Güncelleme Başarısız",
@@ -170,13 +203,14 @@ const EditProfile: React.FC = () => {
     }
   };
 
-  // JSX kısmı aynı kalacak
+  // JSX kısmı
   if (pageLoading || authLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-lg text-muted-foreground">Yükleniyor...</p>
         </div>
         <Footer />
       </div>
@@ -187,8 +221,8 @@ const EditProfile: React.FC = () => {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <div className="flex-1 flex items-center justify-center p-4 text-center">
-            <p className="text-lg">Bu sayfayı görüntülemek için giriş yapmanız gerekiyor.</p>
+        <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+            <p className="text-lg text-muted-foreground">Bu sayfayı görüntülemek için giriş yapmanız gerekiyor.</p>
             <Button onClick={() => navigate('/login')} className="mt-4">Giriş Yap</Button>
         </div>
         <Footer />
@@ -212,14 +246,22 @@ const EditProfile: React.FC = () => {
                 <div className="space-y-2">
                   <Label>Avatar</Label>
                   <div className="flex items-center space-x-4">
-                    <img src={avatarPreview || '/default-avatar.png'} alt="Avatar Önizleme" className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border bg-muted" onError={(e) => (e.currentTarget.src = '/default-avatar.png')} />
-                    <div className="flex flex-col space-y-2">
+                    {/* Avatar önizlemesi */}
+                    <img
+                       src={avatarPreview || '/default-avatar.png'}
+                       alt="Avatar Önizleme"
+                       className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border bg-muted flex-shrink-0"
+                       onError={(e) => { e.currentTarget.src = '/default-avatar.png'; e.currentTarget.classList.add('object-contain'); }}
+                    />
+                    <div className="flex flex-col space-y-2 flex-grow">
                       <Input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarChange} className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
-                      {currentAvatarPath && currentAvatarPath !== '' && !currentAvatarPath.includes('default-avatar.png') && avatarPreview !== '/default-avatar.png' && (
-                        <Button type="button" variant="outline" size="sm" onClick={handleRemoveAvatar} disabled={isSubmitting} className="flex items-center">
-                          <Trash2 className="mr-2 h-4 w-4" /> Avatarı Kaldır
-                        </Button>
-                      )}
+                       {/* Sadece mevcut bir avatar varsa ve bu varsayılan değilse "Avatarı Kaldır" butonunu göster */}
+                       {/* currentAvatarPath undefined OLMADIĞINI ve default olmadığını kontrol et */}
+                       {currentAvatarPath && currentAvatarPath !== '' && !currentAvatarPath.includes('default-avatar.png') && (
+                         <Button type="button" variant="outline" size="sm" onClick={handleRemoveAvatar} disabled={isSubmitting} className="flex items-center w-max">
+                           <Trash2 className="mr-2 h-4 w-4" /> Avatarı Kaldır
+                         </Button>
+                       )}
                     </div>
                   </div>
                 </div>
